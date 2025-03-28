@@ -6,6 +6,9 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useDispatch, useSelector } from 'react-redux';
+import { login } from '@/store/slices/authSlice';
+import { AppDispatch, RootState } from '@/store/store';
 
 type LoginFormData = {
   email: string;
@@ -17,13 +20,16 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const { register, handleSubmit } = useForm<LoginFormData>();
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
+  const { loading, error } = useSelector((state: RootState) => state.auth);
 
-  const onSubmit = (data: LoginFormData) => {
-    console.log(data);
-    // Handle login logic here
-    
-    // Navigate to dashboard after successful login
-    router.push('/dashboard');
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      await dispatch(login({ email: data.email, password: data.password })).unwrap();
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('Login failed:', err);
+    }
   };
 
   return (
@@ -35,6 +41,12 @@ export default function LoginPage() {
             Sign in if you already have an account.
           </p>
         </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative" role="alert">
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
 
         <div className="mt-8 space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -147,9 +159,10 @@ export default function LoginPage() {
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                disabled={loading}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign In
+                {loading ? 'Signing in...' : 'Sign In'}
               </button>
             </div>
           </form>
