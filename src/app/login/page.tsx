@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { login } from '@/store/slices/authSlice';
-import { getJiraConnectUrl, setConnectionStatus, fetchAvailableIntegrations } from '@/store/slices/jiraSlice';
+import { setConnectionStatus } from '@/store/slices/jiraSlice';
 import { AppDispatch, RootState } from '@/store/store';
 
 type LoginFormData = {
@@ -53,8 +53,24 @@ export default function LoginPage() {
 
   const handleJiraConnect = async () => {
     try {
-      const userId = 'fc12e940-8900-4cc1-9938-7f52776e782e'; // This should come from your auth state
-      const oauthUrl = await dispatch(getJiraConnectUrl(userId)).unwrap();
+      const userId = '90eea180-e5a5-4b82-b31a-e47e30b4579f'; // This should come from your auth state
+      const response = await fetch(`https://127.0.0.1:7000/api/v1/jira/connect?user_id=${userId}`);
+      const data = await response.json();
+
+      // Check if user is already connected
+      if (response.status === 409 && data.status === "connected") {
+        console.log("User is already connected to Jira");
+        dispatch(setConnectionStatus(true));
+        router.push('/dashboard');
+        return;
+      }
+
+      // If not already connected, proceed with OAuth flow
+      if (!response.ok) {
+        throw new Error('Failed to get Jira connect URL');
+      }
+
+      const oauthUrl = data.oauth_url;
       
       // Open Jira OAuth popup
       const width = 600;
@@ -72,8 +88,6 @@ export default function LoginPage() {
       const checkPopup = setInterval(() => {
         if (!popup || popup.closed) {
           clearInterval(checkPopup);
-          // Fetch available integrations after popup is closed
-          dispatch(fetchAvailableIntegrations());
         }
       }, 500);
     } catch (err) {
