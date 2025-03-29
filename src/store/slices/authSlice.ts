@@ -23,7 +23,7 @@ const initialState: AuthState = {
 export const login = createAsyncThunk(
   'auth/login',
   async (credentials: { email: string; password: string }) => {
-    const response = await fetch('http://localhost:5000/auth/login', {
+    const response = await fetch('https://localhost:7000/api/v1/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

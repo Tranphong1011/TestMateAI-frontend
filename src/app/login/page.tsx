@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { login } from '@/store/slices/authSlice';
+import { getJiraConnectUrl, setConnectionStatus, fetchAvailableIntegrations } from '@/store/slices/jiraSlice';
 import { AppDispatch, RootState } from '@/store/store';
 
 type LoginFormData = {
@@ -22,6 +23,24 @@ export default function LoginPage() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { loading, error } = useSelector((state: RootState) => state.auth);
+  const { isConnected } = useSelector((state: RootState) => state.jira);
+
+  useEffect(() => {
+    // Listen for messages from the Jira OAuth popup
+    const handleMessage = async (event: MessageEvent) => {
+
+      if (event.data.status === 'oauth_success') {
+        console.log("event.data", event.data);
+        dispatch(setConnectionStatus(true));
+        // Fetch available integrations after successful OAuth
+        // await dispatch(fetchAvailableIntegrations());
+        router.push('/jira-projects');
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [dispatch, router]);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
@@ -29,6 +48,36 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (err) {
       console.error('Login failed:', err);
+    }
+  };
+
+  const handleJiraConnect = async () => {
+    try {
+      const userId = 'fc12e940-8900-4cc1-9938-7f52776e782e'; // This should come from your auth state
+      const oauthUrl = await dispatch(getJiraConnectUrl(userId)).unwrap();
+      
+      // Open Jira OAuth popup
+      const width = 600;
+      const height = 700;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
+      
+      const popup = window.open(
+        oauthUrl,
+        'Jira Connect',
+        `width=${width},height=${height},left=${left},top=${top}`
+      );
+
+      // Check if popup was closed
+      const checkPopup = setInterval(() => {
+        if (!popup || popup.closed) {
+          clearInterval(checkPopup);
+          // Fetch available integrations after popup is closed
+          dispatch(fetchAvailableIntegrations());
+        }
+      }, 500);
+    } catch (err) {
+      console.error('Failed to get Jira connect URL:', err);
     }
   };
 
@@ -65,7 +114,7 @@ export default function LoginPage() {
             </button>
             <button
               className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-              onClick={() => console.log('Jira Sign In')}
+              onClick={handleJiraConnect}
             >
               <Image
                 src="/jira-icon.svg"
