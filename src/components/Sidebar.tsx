@@ -2,18 +2,25 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { logout } from '@/store/slices/authSlice';
 import { ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
+import { IconType } from 'react-icons';
 
 interface SidebarProps {
   projectName: string;
+  navigation: {
+    name: string;
+    href: string;
+    icon: IconType;
+  }[];
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ projectName }) => {
+const Sidebar: React.FC<SidebarProps> = ({ projectName, navigation }) => {
   const router = useRouter();
   const dispatch = useDispatch();
+  const pathname = usePathname();
 
   const handleLogout = () => {
     dispatch(logout());
@@ -28,26 +35,20 @@ const Sidebar: React.FC<SidebarProps> = ({ projectName }) => {
       </div>
       
       <nav className="space-y-4">
-        <Link href="/dashboard" className="flex items-center space-x-3 text-gray-300 hover:text-white">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-          <span>Dashboard</span>
-        </Link>
-        
-        <Link href="/review" className="flex items-center space-x-3 text-gray-300 hover:text-white">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          <span>Review and management</span>
-        </Link>
-        
-        <Link href="/knowledge" className="flex items-center space-x-3 text-gray-300 hover:text-white">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-          <span>LLM knowledge base</span>
-        </Link>
+        {navigation.map((item) => (
+          <Link
+            key={item.name}
+            href={item.href}
+            className={`flex items-center space-x-3 text-gray-300 hover:text-white ${
+              pathname === item.href
+                ? 'bg-gray-700'
+                : 'hover:bg-gray-700'
+            }`}
+          >
+            <item.icon className="w-5 h-5" />
+            <span>{item.name}</span>
+          </Link>
+        ))}
       </nav>
       
       <div className="absolute bottom-4">
