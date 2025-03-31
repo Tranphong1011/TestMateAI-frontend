@@ -2,21 +2,33 @@
 
 import React, { useState } from 'react';
 import { ArrowDownTrayIcon, ShareIcon } from '@heroicons/react/24/outline';
+import TestCaseDetailsModal from '@/components/TestCaseDetailsModal';
 
 interface TestCase {
   title: string;
   category: string;
   steps: number;
   expectedResult: string;
+  description?: string;
+  detailedSteps?: { text: string; completed: boolean; }[];
 }
 
 export default function TestcasePage() {
+  const [selectedTestCase, setSelectedTestCase] = useState<TestCase | null>(null);
   const [testCases, setTestCases] = useState<TestCase[]>([
     {
       title: 'Verify User Login with Valid Credentials',
       category: 'Functional',
       steps: 10,
-      expectedResult: 'The user should be successfully logged in and redirected to the dashboard/homepage.'
+      expectedResult: 'The user should be successfully logged in and redirected to the dashboard/homepage.',
+      description: 'Create overall ux process of full product include user personas, sitemap, information architecture, user flow and mindmap for our client to show research process and accurate results.',
+      detailedSteps: [
+        { text: 'Open the application login page', completed: true },
+        { text: 'Enter a valid registered email or mobile number in the username field', completed: true },
+        { text: 'Enter the correct password in the password field', completed: true },
+        { text: 'Click on the Login button', completed: true },
+        { text: 'Observe the system response', completed: true }
+      ]
     },
     {
       title: 'Verify Error Message for Incorrect Password',
@@ -64,6 +76,10 @@ export default function TestcasePage() {
       default:
         return 'text-gray-600 bg-gray-50';
     }
+  };
+
+  const handleRowClick = (testCase: TestCase) => {
+    setSelectedTestCase(testCase);
   };
 
   return (
@@ -148,11 +164,27 @@ export default function TestcasePage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {testCases.map((testCase, index) => (
-                  <tr key={index}>
+                  <tr 
+                    key={index}
+                    onClick={() => handleRowClick(testCase)}
+                    className={`cursor-pointer transition-colors duration-150 ${
+                      selectedTestCase?.title === testCase.title 
+                        ? 'bg-blue-100 hover:bg-blue-200' 
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <input type="checkbox" className="mr-3 rounded border-gray-300" />
-                        <span className="text-sm text-gray-900">{testCase.title}</span>
+                        <input
+                          type="checkbox"
+                          className="mr-3 rounded border-gray-300"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span className={`text-sm ${
+                          selectedTestCase?.title === testCase.title 
+                            ? 'text-blue-900 font-medium' 
+                            : 'text-gray-900'
+                        }`}>{testCase.title}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -167,7 +199,10 @@ export default function TestcasePage() {
                       <div className="max-w-md line-clamp-2">{testCase.expectedResult}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button className="text-gray-400 hover:text-gray-600">
+                      <button 
+                        className="text-gray-400 hover:text-gray-600"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                         </svg>
@@ -195,6 +230,18 @@ export default function TestcasePage() {
           </div>
         </div>
       </div>
+
+      {selectedTestCase && (
+        <TestCaseDetailsModal
+          isOpen={!!selectedTestCase}
+          onClose={() => setSelectedTestCase(null)}
+          testCase={{
+            ...selectedTestCase,
+            description: selectedTestCase.description || '',
+            steps: selectedTestCase.detailedSteps || []
+          }}
+        />
+      )}
     </div>
   );
 } 
