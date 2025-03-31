@@ -46,9 +46,9 @@ export default function TestcasePage() {
 
   const stats = {
     totalTestCases: 15,
-    verifiedTestCases: 40689,
-    pendingTestCases: 40689,
-    rejectedTestCases: 40689
+    verifiedTestCases: 100,
+    pendingTestCases: 100,
+    rejectedTestCases: 100
   };
 
   const getCategoryColor = (category: string) => {
@@ -67,17 +67,10 @@ export default function TestcasePage() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
+    <div className="flex-1 overflow-y-auto p-2">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <div className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
-              <span>Dashboard</span>
-              <span>/</span>
-              <span>My Projects</span>
-            </div>
-            <h1 className="text-2xl font-semibold">Testcase</h1>
-          </div>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-semibold">Testcase</h1>
           <div className="flex items-center space-x-4">
             <button className="flex items-center space-x-2 text-blue-600">
               <ArrowDownTrayIcon className="w-5 h-5" />
@@ -90,10 +83,10 @@ export default function TestcasePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-4 gap-4 mb-6">
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                 <span className="text-blue-600 font-semibold">{stats.totalTestCases}</span>
               </div>
               <div>
@@ -104,7 +97,7 @@ export default function TestcasePage() {
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
                 <span className="text-yellow-600 font-semibold">{stats.verifiedTestCases}</span>
               </div>
               <div>
@@ -115,7 +108,7 @@ export default function TestcasePage() {
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                 <span className="text-green-600 font-semibold">{stats.pendingTestCases}</span>
               </div>
               <div>
@@ -126,7 +119,7 @@ export default function TestcasePage() {
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
                 <span className="text-red-600 font-semibold">{stats.rejectedTestCases}</span>
               </div>
               <div>
