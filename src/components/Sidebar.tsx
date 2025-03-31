@@ -28,37 +28,60 @@ const Sidebar: React.FC<SidebarProps> = ({ projectName, navigation }) => {
   };
 
   return (
-    <div className="w-64 h-screen bg-[#0A2533] text-white p-4">
-      <div className="flex items-center space-x-3 mb-8">
-        <div className="bg-blue-500 text-white px-2 py-1 rounded text-sm">PR</div>
-        <h2 className="font-semibold">{projectName}</h2>
+    <div className="w-80 h  -screen bg-[#0A2533] text-white flex">
+      {/* Project Icons Column */}
+      <div className="w-16 h-full border-r border-gray-700 p-2">
+        <div className="flex flex-col items-center space-y-4">
+          {/* Project Logo */}
+          <div className="bg-blue-500 text-white px-2 py-1 rounded text-sm mb-4">PR</div>
+          
+          {/* Project Icons */}
+          <div className="space-y-2">
+            <div className="w-10 h-10 bg-gray-700 rounded flex items-center justify-center cursor-pointer hover:bg-gray-600">
+              <span className="text-xs">P1</span>
+            </div>
+            <div className="w-10 h-10 bg-gray-700 rounded flex items-center justify-center cursor-pointer hover:bg-gray-600">
+              <span className="text-xs">P2</span>
+            </div>
+            <div className="w-10 h-10 bg-gray-700 rounded flex items-center justify-center cursor-pointer hover:bg-gray-600">
+              <span className="text-xs">P3</span>
+            </div>
+          </div>
+        </div>
       </div>
-      
-      <nav className="space-y-4">
-        {navigation.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            className={`flex items-center space-x-3 text-gray-300 hover:text-white ${
-              pathname === item.href
-                ? 'bg-gray-700'
-                : 'hover:bg-gray-700'
-            }`}
+
+      {/* Navigation Column */}
+      <div className="flex-1 p-4 flex flex-col">
+        <div className="flex items-center space-x-3 mb-8">
+          <h2 className="font-semibold">{projectName}</h2>
+        </div>
+        
+        <nav className="space-y-4 flex-1">
+          {navigation.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`flex items-center space-x-3 text-gray-300 hover:text-white px-3 py-2 rounded-md ${
+                pathname === item.href
+                  ? 'bg-gray-700'
+                  : 'hover:bg-gray-700'
+              }`}
+            >
+              <item.icon className="w-5 h-5" />
+              <span>{item.name}</span>
+            </Link>
+          ))}
+        </nav>
+        
+        <div className="mt-auto">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center space-x-3 text-gray-300 hover:text-white w-full px-3 py-2 rounded-md hover:bg-gray-700 transition-colors"
           >
-            <item.icon className="w-5 h-5" />
-            <span>{item.name}</span>
-          </Link>
-        ))}
-      </nav>
-      
-      <div className="absolute bottom-4">
-        <button 
-          onClick={handleLogout}
-          className="flex items-center space-x-3 text-gray-300 hover:text-white w-full px-3 py-2 rounded-md hover:bg-gray-700 transition-colors"
-        >
-          <ArrowLeftOnRectangleIcon className="w-5 h-5" />
-          <span>Logout</span>
-        </button>
+            <ArrowLeftOnRectangleIcon className="w-5 h-5" />
+            <span>Logout</span>
+          </button>
+        </div>
       </div>
     </div>
   );

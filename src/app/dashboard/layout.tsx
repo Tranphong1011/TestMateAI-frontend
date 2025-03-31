@@ -8,9 +8,12 @@ import { usePathname } from 'next/navigation';
 
 const navigation = [
   { name: 'My Projects', href: '/dashboard/my-projects', icon: HomeIcon },
-  { name: 'QA Tickets', href: '/dashboard/qa-tickets', icon: DocumentTextIcon },
-  { name: 'Jira Projects', href: '/dashboard/jira-projects', icon: BookOpenIcon },
-  { name: 'Create Project', href: '/dashboard/create-project', icon: PlusIcon },
+  // { name: 'QA Tickets', href: '/dashboard/qa-tickets', icon: DocumentTextIcon },
+  // { name: 'Jira Projects', href: '/dashboard/jira-projects', icon: BookOpenIcon },
+  { name: 'Review and Management', href: '/dashboard/jira-projects', icon: BookOpenIcon },
+  { name: 'LLM Tuning', href: '/dashboard/jira-projects', icon: BookOpenIcon },
+  // { name: 'Create Project', href: '/dashboard/create-project', icon: PlusIcon },
+  
 ];
 
 export default function DashboardLayout({

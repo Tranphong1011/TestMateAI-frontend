@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import TicketDetailsModal from '@/components/TicketDetailsModal';
+import { HomeIcon, DocumentTextIcon, BookOpenIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 interface Ticket {
   id: string;
@@ -58,14 +59,6 @@ export default function QATickets() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar projectName="Project Name" />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header
-          userName="John"
-          temperature={22}
-          date="Friday, 14 March"
-        />
         
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-7xl mx-auto">
@@ -162,7 +155,7 @@ export default function QATickets() {
             </div>
           </div>
         </main>
-      </div>
+      
 
       {/* Ticket Details Modal */}
       {selectedTicket && (
