@@ -75,8 +75,8 @@ export default function QATickets() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="flex-1 overflow-y-auto">
+      <div className="max-w-8xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold">QA Ready Tickets</h1>
           <button 

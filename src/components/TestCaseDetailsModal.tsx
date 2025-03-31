@@ -17,10 +17,12 @@ interface TestCaseDetailsModalProps {
     description: string;
     steps: Step[];
     expectedResult: string;
+    status?: 'approved' | 'rejected' | 'pending';
   };
+  onStatusChange?: (status: 'approved' | 'rejected') => void;
 }
 
-export default function TestCaseDetailsModal({ isOpen, onClose, testCase }: TestCaseDetailsModalProps) {
+export default function TestCaseDetailsModal({ isOpen, onClose, testCase, onStatusChange }: TestCaseDetailsModalProps) {
   if (!isOpen) return null;
 
   const getCategoryColor = (category: string) => {
@@ -103,15 +105,25 @@ export default function TestCaseDetailsModal({ isOpen, onClose, testCase }: Test
                   <div className="flex space-x-3">
                     <button
                       type="button"
-                      className="rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+                      onClick={() => onStatusChange?.('approved')}
+                      className={`rounded-md px-3 py-2 text-sm font-semibold shadow-sm ${
+                        testCase.status === 'approved'
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                          : 'bg-green-600 text-white hover:bg-green-500'
+                      } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600`}
                     >
-                      Approve
+                      {testCase.status === 'approved' ? 'Approved' : 'Approve'}
                     </button>
                     <button
                       type="button"
-                      className="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+                      onClick={() => onStatusChange?.('rejected')}
+                      className={`rounded-md px-3 py-2 text-sm font-semibold shadow-sm ${
+                        testCase.status === 'rejected'
+                          ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                          : 'bg-red-600 text-white hover:bg-red-500'
+                      } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600`}
                     >
-                      Reject
+                      {testCase.status === 'rejected' ? 'Rejected' : 'Reject'}
                     </button>
                   </div>
                   <button
