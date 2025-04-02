@@ -17,7 +17,7 @@ interface SidebarProps {
   }[];
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ projectName, navigation }) => {
+const Sidebar: React.FC<SidebarProps> = ({ projectName, navigation = [] }) => {
   const router = useRouter();
   const dispatch = useDispatch();
   const pathname = usePathname();
@@ -57,20 +57,22 @@ const Sidebar: React.FC<SidebarProps> = ({ projectName, navigation }) => {
         </div>
         
         <nav className="space-y-4 flex-1">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`flex items-center space-x-3 text-gray-300 hover:text-white px-3 py-2 rounded-md ${
-                pathname === item.href
-                  ? 'bg-gray-700'
-                  : 'hover:bg-gray-700'
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              <span>{item.name}</span>
-            </Link>
-          ))}
+          {navigation.length > 0 ? (
+            navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`flex items-center space-x-3 text-gray-300 hover:text-white px-3 py-2 rounded-md ${
+                  pathname === item.href ? 'bg-gray-700' : 'hover:bg-gray-700'
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                <span>{item.name}</span>
+              </Link>
+            ))
+          ) : (
+            <div className="text-gray-500">No navigation items available.</div>
+          )}
         </nav>
         
         <div className="mt-auto">

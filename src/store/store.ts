@@ -1,4 +1,4 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import authReducer from './slices/authSlice';
@@ -9,20 +9,21 @@ import jiraReducer from './slices/jiraSlice';
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['auth', 'project', 'jira'], // Persist auth, project, and jira state
+  whitelist: ['auth', 'project', 'jira'], // Persist these reducers
 };
 
-// Create persisted reducers
-const persistedAuthReducer = persistReducer(persistConfig, authReducer);
-const persistedProjectReducer = persistReducer(persistConfig, projectReducer);
-const persistedJiraReducer = persistReducer(persistConfig, jiraReducer);
+// Combine all reducers
+const rootReducer = combineReducers({
+  auth: authReducer,
+  project: projectReducer,
+  jira: jiraReducer,
+});
+
+// Create a single persisted reducer
+const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 export const store = configureStore({
-  reducer: {
-    auth: persistedAuthReducer,
-    project: persistedProjectReducer,
-    jira: persistedJiraReducer,
-  },
+  reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {

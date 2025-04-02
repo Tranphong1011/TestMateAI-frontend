@@ -7,7 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
-import { login } from '@/store/slices/authSlice';
+import { login, setToken } from '@/store/slices/authSlice';
 import { setConnectionStatus } from '@/store/slices/jiraSlice';
 import { AppDispatch, RootState } from '@/store/store';
 
@@ -31,6 +31,10 @@ export default function LoginPage() {
 
       if (event.data.status === 'oauth_success') {
         console.log("event.data", event.data);
+        const token = event.data.token;
+        if (token) {
+          dispatch(setToken(token)); // Dispatch the action to set the token in the auth slice
+        }
         dispatch(setConnectionStatus(true));
         // Fetch available integrations after successful OAuth
         // await dispatch(fetchAvailableIntegrations());
@@ -61,6 +65,12 @@ export default function LoginPage() {
       // Check if user is already connected
       if (response.status === 409 && data.status === "connected") {
         console.log("User is already connected to Jira");
+
+        // console.log("data", data)
+        const token = data.token;
+        if (token) {
+          dispatch(setToken(token)); // Dispatch the action to set the token in the auth slice
+        }
         dispatch(setConnectionStatus(true));
         router.push('/dashboard');
         return;
