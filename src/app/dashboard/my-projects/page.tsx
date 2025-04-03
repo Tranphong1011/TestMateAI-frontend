@@ -116,8 +116,8 @@ export default function MyProjects() {
                 <Image
                   src={project.thumbnail}
                   alt={project.name}
-                  width={400}
-                  height={200}
+                  width={200}
+                  height={100}
                   className="w-full h-48 object-cover"
                 />
                 <div className="p-4">

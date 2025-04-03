@@ -10,4 +10,18 @@
 body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-rgb));
+}
+
+.pt-[48px] {
+  padding-top: 48px;
+}
+
+@layer utilities {
+  .bg-[#012B34] {
+    background-color: #012B34;
+  }
+  
+  .bg-[#023B47] {
+    background-color: #023B47;
+  }
 } 
