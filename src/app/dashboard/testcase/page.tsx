@@ -1,91 +1,140 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowDownTrayIcon, ShareIcon } from '@heroicons/react/24/outline';
 import TestCaseDetailsModal from '@/components/TestCaseDetailsModal';
+import { useSearchParams } from 'next/navigation';
 
 interface TestCase {
-  title: string;
+  id: string;
   category: string;
-  steps: number;
-  expectedResult: string;
-  description?: string;
-  detailedSteps?: { text: string; completed: boolean; }[];
+  testcase: string;
+  description: string;
+  steps: string[];
+  expected_result: string;
   status?: 'approved' | 'rejected' | 'pending';
 }
 
 export default function TestcasePage() {
+  const searchParams = useSearchParams();
   const [selectedTestCase, setSelectedTestCase] = useState<TestCase | null>(null);
   const [expandedTableId, setExpandedTableId] = useState<string | null>('table1');
-  const [testCases, setTestCases] = useState<TestCase[]>([
-    {
-      title: 'Verify User Login with Valid Credentials',
-      category: 'Functional',
-      steps: 10,
-      status: 'approved',
-      expectedResult: 'The user should be successfully logged in and redirected to the dashboard/homepage.',
-      description: 'Create overall ux process of full product include user personas, sitemap, information architecture, user flow and mindmap for our client to show research process and accurate results.',
-      detailedSteps: [
-        { text: 'Open the application login page', completed: true },
-        { text: 'Enter a valid registered email or mobile number in the username field', completed: true },
-        { text: 'Enter the correct password in the password field', completed: true },
-        { text: 'Click on the Login button', completed: true },
-        { text: 'Observe the system response', completed: true }
-      ]
-    },
-    {
-      title: 'Verify Error Message for Incorrect Password',
-      category: 'Negative',
-      steps: 10,
-      status: 'rejected',
-      expectedResult: 'The system should display a clear error message like "Incorrect password. Please try again." and prevent login.'
-    },
-    {
-      title: 'Verify Login with Unregistered Email/Mobile Number',
-      category: 'Negative',
-      steps: 10,
-      status: 'pending',
-      expectedResult: 'The system should display an error message like "No account found with this email/mobile number. Please sign up." and prevent login.'
-    },
-    {
-      title: 'Verify Password Masking on Login Page',
-      category: 'Security',
-      steps: 10,
-      status: 'pending',
-      expectedResult: 'Password characters should be hidden while typing. An option to toggle visibility may be available.'
-    },
-    {
-      title: 'Verify Login Session Persistence After Refresh',
-      category: 'Usability',
-      steps: 10,
-      status: 'approved',
-      expectedResult: 'If the user was already logged in, refreshing the page should not log them out, and they should remain on the same page or be redirected to the homepage.'
-    }
-  ]);
+  const [testCases, setTestCases] = useState<TestCase[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showTable, setShowTable] = useState(false);
+  const [stats, setStats] = useState({
+    totalTestCases: 0,
+    verifiedTestCases: 0,
+    pendingTestCases: 0,
+    rejectedTestCases: 0
+  });
 
-  const stats = {
-    totalTestCases: 15,
-    verifiedTestCases: 100,
-    pendingTestCases: 100,
-    rejectedTestCases: 100
-  };
+  // Get ticket data from URL params with null checks
+  const ticketTitle = searchParams?.get('title') ?? '';
+  const ticketDescription = searchParams?.get('description') ?? '';
 
-  const getCategoryColor = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'functional':
-        return 'text-blue-600 bg-blue-50';
-      case 'negative':
-        return 'text-orange-600 bg-orange-50';
-      case 'security':
-        return 'text-purple-600 bg-purple-50';
-      case 'usability':
-        return 'text-teal-600 bg-teal-50';
-      default:
-        return 'text-gray-600 bg-gray-50';
-    }
+  useEffect(() => {
+    let mounted = true;
+    
+    const generateTestCases = async () => {
+      if (!ticketTitle || !ticketDescription || !mounted) return;
+      
+      setLoading(true);
+      setTestCases([]);
+      setShowTable(false);
+
+      try {
+        const response = await fetch('https://127.0.0.1:7000/api/v1/test_cases/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: searchParams?.get('id') ?? '',
+            key: searchParams?.get('key') ?? '',
+            title: ticketTitle,
+            desc: ticketDescription,
+            issue_type: searchParams?.get('issue_type') ?? 'Task',
+            priority: searchParams?.get('priority') ?? 'Medium',
+            status: searchParams?.get('status') ?? 'To Do'
+          })
+        });
+
+        if (!mounted) return;
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        if (!response.body) throw new Error('No response body');
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        try {
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            
+            for (let i = 0; i < lines.length - 1; i++) {
+              const line = lines[i].trim();
+              if (line.startsWith('data: ')) {
+                try {
+                  const jsonStr = line.slice(5).trim();
+                  const testCase = JSON.parse(jsonStr);
+                  if (mounted) {
+
+                    console.log("testCase", testCase);
+                    addTestCase(testCase);
+                    setShowTable(true);
+                    setLoading(false);
+                  }
+                } catch (e) {
+                  console.error('Error parsing test case:', e);
+                }
+              }
+            }
+            buffer = lines[lines.length - 1];
+          }
+        } finally {
+          reader.releaseLock();
+        }
+      } catch (error) {
+        if (mounted) {
+          console.error('Error generating test cases:', error);
+          setLoading(false);
+        }
+      }
+    };
+
+    generateTestCases();
+
+    return () => {
+      mounted = false;
+    };
+  }, [ticketTitle]);
+
+  const getCategoryColor = (category: string | undefined | null) => {
+    const defaultCategory = 'functional';
+    const safeCategory = (category || defaultCategory).toLowerCase();
+    
+    const categoryColors = {
+      functional: 'text-blue-600 bg-blue-50',
+      negative: 'text-orange-600 bg-orange-50',
+      security: 'text-purple-600 bg-purple-50',
+      usability: 'text-teal-600 bg-teal-50'
+    };
+
+    return categoryColors[safeCategory as keyof typeof categoryColors] || categoryColors[defaultCategory];
   };
 
   const handleRowClick = (testCase: TestCase) => {
+
+    // console.log("details testCase", testCase);
     setSelectedTestCase(testCase);
   };
 
@@ -93,17 +142,36 @@ export default function TestcasePage() {
     if (!selectedTestCase) return;
     
     const updatedTestCases = testCases.map(testCase => 
-      testCase.title === selectedTestCase.title 
+      testCase.id === selectedTestCase.id 
         ? { ...testCase, status } 
         : testCase
     );
     
     setTestCases(updatedTestCases);
+    updateStats(updatedTestCases);
     setSelectedTestCase({ ...selectedTestCase, status });
   };
 
   const handleTableToggle = (tableId: string) => {
     setExpandedTableId(expandedTableId === tableId ? null : tableId);
+  };
+
+  const updateStats = (testCases: TestCase[]) => {
+    const newStats = {
+      totalTestCases: testCases.length,
+      verifiedTestCases: testCases.filter(tc => tc.status === 'approved').length,
+      pendingTestCases: testCases.filter(tc => tc.status === 'pending').length,
+      rejectedTestCases: testCases.filter(tc => tc.status === 'rejected').length
+    };
+    setStats(newStats);
+  };
+
+  const addTestCase = (testCase: Omit<TestCase, 'status'>) => {
+    setTestCases(prev => {
+      const newTestCases = [...prev, { ...testCase, status: 'pending' as const }];
+      updateStats(newTestCases);
+      return newTestCases;
+    });
   };
 
   const TableSection = ({ 
@@ -143,38 +211,29 @@ export default function TestcasePage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Case</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No. of Steps</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected result</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Steps</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected Result</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {testCases.map((testCase, index) => (
                   <tr 
-                    key={index}
+                    key={testCase.id}
                     onClick={() => handleRowClick(testCase)}
                     className={`cursor-pointer transition-colors duration-150 ${
-                      selectedTestCase?.title === testCase.title 
+                      selectedTestCase?.id === testCase.id 
                         ? 'bg-blue-100 hover:bg-blue-200' 
                         : 'hover:bg-gray-50'
                     }`}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          className="mr-3 rounded border-gray-300"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <span className={`text-sm ${
-                          selectedTestCase?.title === testCase.title 
-                            ? 'text-blue-900 font-medium' 
-                            : 'text-gray-900'
-                        }`}>{testCase.title}</span>
-                      </div>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{testCase.id}</td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">{testCase.testcase}</div>
+                      <div className="text-sm text-gray-500">{testCase.description}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 rounded-md text-xs ${getCategoryColor(testCase.category)}`}>
@@ -196,24 +255,14 @@ export default function TestcasePage() {
                             ? 'bg-red-500'
                             : 'bg-yellow-500'
                         }`}></span>
-                        {testCase.status || 'pending'}
+                        {testCase.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {testCase.steps}
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      <div className="max-w-md line-clamp-2">{testCase.steps?.length} steps</div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      <div className="max-w-md line-clamp-2">{testCase.expectedResult}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button 
-                        className="text-gray-400 hover:text-gray-600"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                        </svg>
-                      </button>
+                      <div className="max-w-md line-clamp-2">{testCase.expected_result}</div>
                     </td>
                   </tr>
                 ))}
@@ -244,7 +293,7 @@ export default function TestcasePage() {
     <div className="flex-1 overflow-y-auto px-8 pb-8">
       <div className="max-w-8xl mx-auto">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-semibold">Testcase</h1>
+          <h1 className="text-2xl font-semibold">Test Cases for: {ticketTitle}</h1>
           <div className="flex items-center space-x-4">
             <button className="flex items-center space-x-2 text-blue-600">
               <ArrowDownTrayIcon className="w-5 h-5" />
@@ -304,26 +353,19 @@ export default function TestcasePage() {
           </div>
         </div>
 
-        <TableSection
-          id="table1"
-          title="Functional Test Cases"
-          description="Test cases for core functionality validation"
-          isExpanded={expandedTableId === 'table1'}
-        />
-
-        <TableSection
-          id="table2"
-          title="Security Test Cases"
-          description="Test cases for security validation and verification"
-          isExpanded={expandedTableId === 'table2'}
-        />
-
-        <TableSection
-          id="table3"
-          title="Performance Test Cases"
-          description="Test cases for performance and load testing"
-          isExpanded={expandedTableId === 'table3'}
-        />
+        {loading && !showTable ? (
+          <div className="flex flex-col items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+            <p className="text-gray-600">Generating test cases...</p>
+          </div>
+        ) : (
+          <TableSection
+            id="table1"
+            title="Generated Test Cases"
+            description="Test cases generated based on ticket requirements"
+            isExpanded={expandedTableId === 'table1'}
+          />
+        )}
       </div>
 
       {selectedTestCase && (
@@ -331,9 +373,12 @@ export default function TestcasePage() {
           isOpen={!!selectedTestCase}
           onClose={() => setSelectedTestCase(null)}
           testCase={{
-            ...selectedTestCase,
-            description: selectedTestCase.description || '',
-            steps: selectedTestCase.detailedSteps || []
+            title: selectedTestCase.testcase,
+            category: selectedTestCase.category,
+            description: selectedTestCase.description,
+            steps: selectedTestCase.steps,
+            expectedResult: selectedTestCase.expected_result,
+            status: selectedTestCase.status
           }}
           onStatusChange={handleStatusChange}
         />

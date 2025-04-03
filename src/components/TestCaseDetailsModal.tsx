@@ -3,11 +3,6 @@
 import React from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
-interface Step {
-  text: string;
-  completed: boolean;
-}
-
 interface TestCaseDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,7 +10,7 @@ interface TestCaseDetailsModalProps {
     title: string;
     category: string;
     description: string;
-    steps: Step[];
+    steps: string[];
     expectedResult: string;
     status?: 'approved' | 'rejected' | 'pending';
   };
@@ -25,8 +20,10 @@ interface TestCaseDetailsModalProps {
 export default function TestCaseDetailsModal({ isOpen, onClose, testCase, onStatusChange }: TestCaseDetailsModalProps) {
   if (!isOpen) return null;
 
+
+  // console.log("testCase details ", testCase);
   const getCategoryColor = (category: string) => {
-    switch (category.toLowerCase()) {
+    switch (category?.toLowerCase()) {
       case 'functional':
         return 'text-blue-600 bg-blue-50';
       case 'negative':
@@ -83,10 +80,10 @@ export default function TestCaseDetailsModal({ isOpen, onClose, testCase, onStat
                   <div className="space-y-4">
                     {testCase.steps.map((step, index) => (
                       <div key={index} className="flex items-start">
-                        <div className="relative flex h-5 w-5 flex-shrink-0 items-center justify-center">
+                        {/* <div className="relative flex h-5 w-5 flex-shrink-0 items-center justify-center">
                           <div className={`h-2 w-2 rounded-full ${step.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
-                        </div>
-                        <p className="ml-4 text-sm text-gray-600">{step.text}</p>
+                        </div> */}
+                        <p className="ml-4 text-sm text-gray-600">{step}</p>
                       </div>
                     ))}
                   </div>

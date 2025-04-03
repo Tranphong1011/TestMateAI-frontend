@@ -71,7 +71,13 @@ export default function QATickets() {
   }, []);
 
   const handleCreateTestcases = () => {
-    router.push('/dashboard/testcase');
+    if (selectedTicket) {
+      const params = new URLSearchParams({
+        title: selectedTicket.title,
+        description: selectedTicket.description
+      });
+      router.push(`/dashboard/testcase?${params.toString()}`);
+    }
   };
 
   return (
@@ -188,6 +194,7 @@ export default function QATickets() {
         <TicketDetailsModal
           isOpen={!!selectedTicket}
           onClose={() => setSelectedTicket(null)}
+          onGenerateTestcases={handleCreateTestcases}
           ticket={selectedTicket}
         />
       )}

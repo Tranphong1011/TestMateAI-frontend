@@ -5,6 +5,15 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
   },
+  reactStrictMode: true,
+  compiler: {
+    ignoreBuildErrors: true,
+  },
+  experimental: {
+    htmlAttributes: {
+      suppressHydrationWarning: true,
+    },
+  },
 }
 
 module.exports = nextConfig 

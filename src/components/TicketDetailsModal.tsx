@@ -5,6 +5,7 @@ import { XMarkIcon, ShareIcon, EllipsisHorizontalIcon } from '@heroicons/react/2
 interface TicketDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onGenerateTestcases: () => void;
   ticket: {
     title: string;
     description: string;
@@ -26,7 +27,7 @@ interface TicketDetailsModalProps {
   };
 }
 
-const TicketDetailsModal: React.FC<TicketDetailsModalProps> = ({ isOpen, onClose, ticket }) => {
+const TicketDetailsModal: React.FC<TicketDetailsModalProps> = ({ isOpen, onClose, ticket, onGenerateTestcases }) => {
   if (!isOpen) return null;
 
   return (
@@ -140,7 +141,7 @@ const TicketDetailsModal: React.FC<TicketDetailsModalProps> = ({ isOpen, onClose
 
         {/* Footer */}
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
-          <button className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+          <button onClick={onGenerateTestcases} className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
             Create Testcases
           </button>
         </div>
