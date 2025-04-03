@@ -102,7 +102,7 @@ export default function JiraProjectsPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-semibold">Good morning, John</h1>
+          <h1 className="text-2xl font-semibold">Good morning, Rahul sahni</h1>
           <p className="text-gray-500">{currentDay}, {currentDate}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -113,28 +113,20 @@ export default function JiraProjectsPage() {
 
       {/* Projects Section */}
       <div className="bg-white rounded-lg p-8">
-        <h2 className="text-xl font-semibold mb-4">My Projects</h2>
+        <div className="text-left mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+            To get started, join a project
+          </h2>
+        </div>
         
-        {/* Tabs */}
-        <div className="flex gap-8 border-b mb-8">
-          <button
-            className={`pb-2 px-4 ${activeTab === 'recent' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
-            onClick={() => setActiveTab('recent')}
-          >
-            Recent Projects
-          </button>
-          <button
-            className={`pb-2 px-4 ${activeTab === 'jira' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
-            onClick={() => setActiveTab('jira')}
-          >
-            Jira Projects
-          </button>
-          <button
-            className={`pb-2 px-4 ${activeTab === 'collaboration' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
-            onClick={() => setActiveTab('collaboration')}
-          >
-            Collaboration Projects
-          </button>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">📋</span>
+            <h3 className="text-lg font-semibold text-gray-700">Project List</h3>
+            <span className="bg-gray-100 text-gray-600 text-sm px-3 py-1 rounded-full">
+              {projects.length} Projects
+            </span>
+          </div>
         </div>
 
         {/* Projects Grid */}

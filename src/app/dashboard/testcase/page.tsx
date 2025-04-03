@@ -269,7 +269,7 @@ export default function TestcasePage() {
               </tbody>
             </table>
           </div>
-          <div className="px-4 py-3 border-t">
+          {/* <div className="px-4 py-3 border-t">
             <div className="flex items-center justify-between">
               <button className="text-gray-600 hover:text-gray-900">← Previous</button>
               <div className="flex items-center space-x-2">
@@ -283,7 +283,7 @@ export default function TestcasePage() {
               </div>
               <button className="text-gray-600 hover:text-gray-900">Next →</button>
             </div>
-          </div>
+          </div> */}
         </>
       )}
     </div>

@@ -152,52 +152,96 @@ export default function MyProjects() {
         {/* Project Grid */}
         <div className="grid grid-cols-3 gap-6">
           {projects.map((project) => (
-            <Link 
-              href={`/dashboard/qa-tickets?projectId=${project.id}`} 
+            <div 
               key={project.id}
-              className="border rounded-lg overflow-hidden transition-transform hover:transform hover:scale-[1.02] hover:shadow-lg"
+              className={`border rounded-lg overflow-hidden transition-transform ${
+                isProjectJoined(project.id) 
+                  ? 'hover:transform hover:scale-[1.02] hover:shadow-lg cursor-pointer' 
+                  : ''
+              }`}
             >
-              <div className="cursor-pointer">
-                <Image
-                  src={project.thumbnail}
-                  alt={project.name}
-                  width={200}
-                  height={100}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center text-white text-xs">
-                        PR
+              {isProjectJoined(project.id) ? (
+                <Link href={`/dashboard/qa-tickets?projectId=${project.id}`}>
+                  <div>
+                    <Image
+                      src={project.thumbnail}
+                      alt={project.name}
+                      width={200}
+                      height={100}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center text-white text-xs">
+                            PR
+                          </div>
+                          <h3 className="font-semibold">{project.name}</h3>
+                        </div>
+                        <button
+                          className="px-3 py-1 rounded text-sm bg-green-100 text-green-700"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Joined
+                        </button>
                       </div>
-                      <h3 className="font-semibold">{project.name}</h3>
+                      <p className="text-gray-500 text-sm mb-4">{project.description}</p>
+                      <div className="flex items-center justify-between text-sm text-gray-500">
+                        <div className="flex items-center gap-1">
+                          <CalendarIcon className="w-4 h-4" />
+                          <span>{project.date}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <UserGroupIcon className="w-4 h-4" />
+                          <span>{project.members}</span>
+                        </div>
+                      </div>
                     </div>
-                    <button
-                      className={`px-3 py-1 rounded text-sm ${
-                        isProjectJoined(project.id)
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-blue-500 text-white hover:bg-blue-600'
-                      }`}
-                      onClick={(e) => handleProjectAction(project, e)}
-                    >
-                      {isProjectJoined(project.id) ? 'Joined' : 'Join'}
-                    </button>
                   </div>
-                  <p className="text-gray-500 text-sm mb-4">{project.description}</p>
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <CalendarIcon className="w-4 h-4" />
-                      <span>{project.date}</span>
+                </Link>
+              ) : (
+                <div>
+                  <div className="opacity-50 grayscale">
+                    <Image
+                      src={project.thumbnail}
+                      alt={project.name}
+                      width={200}
+                      height={100}
+                      className="w-full h-48 object-cover"
+                    />
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="opacity-50 grayscale flex items-center gap-2">
+                        <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center text-white text-xs">
+                          PR
+                        </div>
+                        <h3 className="font-semibold">{project.name}</h3>
+                      </div>
+                      <button
+                        className="px-3 py-1 rounded text-sm bg-blue-500 text-white hover:bg-blue-600 relative z-10"
+                        onClick={(e) => handleProjectAction(project, e)}
+                      >
+                        Join
+                      </button>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <UserGroupIcon className="w-4 h-4" />
-                      <span>{project.members}</span>
+                    <div className="opacity-50 grayscale">
+                      <p className="text-gray-500 text-sm mb-4">{project.description}</p>
+                      <div className="flex items-center justify-between text-sm text-gray-500">
+                        <div className="flex items-center gap-1">
+                          <CalendarIcon className="w-4 h-4" />
+                          <span>{project.date}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <UserGroupIcon className="w-4 h-4" />
+                          <span>{project.members}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </Link>
+              )}
+            </div>
           ))}
         </div>
       </div>
