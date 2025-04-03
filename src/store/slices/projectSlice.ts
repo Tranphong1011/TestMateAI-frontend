@@ -9,10 +9,18 @@ interface Project {
 
 interface ProjectState {
   selectedProject: Project | null;
+  activeProject: {
+    projectKey: string | null;
+    projectName: string | null;
+  };
 }
 
 const initialState: ProjectState = {
   selectedProject: null,
+  activeProject: {
+    projectKey: null,
+    projectName: null,
+  },
 };
 
 const projectSlice = createSlice({
@@ -25,8 +33,14 @@ const projectSlice = createSlice({
     clearSelectedProject: (state) => {
       state.selectedProject = null;
     },
+    setActiveProject: (state, action: PayloadAction<{ projectKey: string; projectName: string }>) => {
+      state.activeProject = action.payload;
+    },
+    clearActiveProject: (state) => {
+      state.activeProject = initialState.activeProject;
+    },
   },
 });
 
-export const { setSelectedProject, clearSelectedProject } = projectSlice.actions;
+export const { setSelectedProject, clearSelectedProject, setActiveProject, clearActiveProject } = projectSlice.actions;
 export default projectSlice.reducer; 

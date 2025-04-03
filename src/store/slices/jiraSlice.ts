@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { setActiveProject } from './projectSlice';
 
 interface JiraState {
   projects: string[];
@@ -30,7 +31,7 @@ export const getJiraProjects = createAsyncThunk(
 
 export const selectProject = createAsyncThunk(
   'jira/selectProject',
-  async ({ project, userId }: { project: string; userId: string }, { rejectWithValue }) => {
+  async ({ project, userId }: { project: string; userId: string }, { rejectWithValue, dispatch }) => {
     try {
       const response = await fetch(`https://127.0.0.1:7000/api/v1/jira/select-project?user_id=${userId}`, {
         method: 'POST',
@@ -45,6 +46,13 @@ export const selectProject = createAsyncThunk(
       }
 
       const data = await response.json();
+      
+      // Dispatch action to update project slice
+      dispatch(setActiveProject({ 
+        projectKey: project,
+        projectName: data.project // Assuming the API returns project details
+      }));
+
       return data;
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to select project');

@@ -3,9 +3,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { CalendarIcon, UserGroupIcon } from '@heroicons/react/24/outline';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { useEffect, useState } from 'react';
+import { setSelectedProject } from '@/store/slices/projectSlice';
 
 interface Project {
   id: string;
@@ -15,6 +16,7 @@ interface Project {
   status: string;
   thumbnail: string;
   members: number;
+  type: string;
 }
 
 interface ProjectResponse {
@@ -24,8 +26,13 @@ interface ProjectResponse {
 }
 
 export default function MyProjects() {
+  const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
+  const { selectedProject, activeProject } = useSelector((state: RootState) => state.project);
+
+  console.log("activeProject",activeProject);
   const userName = user?.name || 'Rahul Sahni';
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +54,7 @@ export default function MyProjects() {
           throw new Error('Failed to fetch projects');
         }
         const data: ProjectResponse = await response.json();
-        console.log("data",data);
+        // console.log("data",data);
         setProjects(data.projects);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch projects');
@@ -58,6 +65,44 @@ export default function MyProjects() {
 
     fetchProjects();
   }, []);
+
+  const handleProjectAction = async (project: Project, e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation
+
+    console.log("project",project);
+    try {
+      // If project is already selected, you might want to unselect it
+      if (selectedProject?.name === project.name) {
+        // Handle unselect logic if needed
+        return;
+      }
+
+      // Dispatch action to update selected project
+      dispatch(setSelectedProject({ ...project, type: 'jira' }));
+
+      // You might want to make an API call here to update the backend
+      const response = await fetch(`https://127.0.0.1:7000/api/v1/projects/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ projectId: project.id }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to join project');
+      }
+    } catch (error) {
+      console.error('Error joining project:', error);
+    }
+  };
+
+  // Helper function to determine if a project is joined
+  const isProjectJoined = (projectId: string): boolean => {
+
+    console.log("selectedProject",selectedProject);
+    return selectedProject?.id === projectId || activeProject?.projectKey === projectId;
+  };
 
   if (loading) {
     return (
@@ -130,16 +175,13 @@ export default function MyProjects() {
                     </div>
                     <button
                       className={`px-3 py-1 rounded text-sm ${
-                        project.status === 'Joined'
-                          ? 'bg-gray-200'
-                          : 'bg-blue-500 text-white'
+                        isProjectJoined(project.id)
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-blue-500 text-white hover:bg-blue-600'
                       }`}
-                      onClick={(e) => {
-                        e.preventDefault(); // Prevent navigation when clicking the button
-                        // Add your join/leave logic here
-                      }}
+                      onClick={(e) => handleProjectAction(project, e)}
                     >
-                      {project.status}
+                      {isProjectJoined(project.id) ? 'Joined' : 'Join'}
                     </button>
                   </div>
                   <p className="text-gray-500 text-sm mb-4">{project.description}</p>

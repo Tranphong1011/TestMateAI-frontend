@@ -23,8 +23,8 @@ export default function DashboardLayout({
 }) {
   const [projectName] = useState('Project Name');
   const pathname = usePathname();
-
   const getBreadcrumbs = () => {
+    if (!pathname) return [];
     const paths = pathname.split('/').filter(Boolean);
     return paths.map((path, index) => {
       const href = '/' + paths.slice(0, index + 1).join('/');
