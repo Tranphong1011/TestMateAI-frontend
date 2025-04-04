@@ -1,16 +1,56 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { SunIcon, CloudIcon, BoltIcon } from '@heroicons/react/24/outline';
 
 interface HeaderProps {
   userName: string;
-  temperature?: number;
   date: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ userName, temperature = 22, date }) => {
+const getWeatherIcon = (condition: string | null) => {
+  if (!condition) return <SunIcon className="w-6 h-6" />;
+
+  const lowerCaseCondition = condition.toLowerCase();
+  if (lowerCaseCondition.includes('sun') || lowerCaseCondition.includes('clear')) {
+    return <SunIcon className="w-6 h-6" />;
+  } else if (lowerCaseCondition.includes('cloud') || lowerCaseCondition.includes('rain') || lowerCaseCondition.includes('drizzle')) {
+    return <CloudIcon className="w-6 h-6" />;
+  } else if (lowerCaseCondition.includes('storm')) {
+    return <BoltIcon className="w-6 h-6" />;
+  }
+  return <SunIcon className="w-6 h-6" />;
+};
+
+const Header: React.FC<HeaderProps> = ({ userName, date }) => {
+  const [currentTemperature, setCurrentTemperature] = useState<number | null>(null);
+  const [weatherCondition, setWeatherCondition] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const simulatedData = { temp: 18, condition: 'Partly Cloudy' };
+        setCurrentTemperature(simulatedData.temp);
+        setWeatherCondition(simulatedData.condition);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        console.error("Weather fetch error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchWeather();
+  }, []);
+
   return (
     <div className="bg-white w-full px-6 py-4">
-      {/* Breadcrumb Navigation */}
       <div className="flex items-center space-x-2 text-sm text-gray-500 mb-4">
         <Link href="/dashboard" className="hover:text-gray-700">Dashboard</Link>
         <span>/</span>
@@ -18,7 +58,6 @@ const Header: React.FC<HeaderProps> = ({ userName, temperature = 22, date }) => 
         <span className="ml-1">...</span>
       </div>
 
-      {/* Greeting and Weather */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Good morning, {userName}</h1>
@@ -26,20 +65,16 @@ const Header: React.FC<HeaderProps> = ({ userName, temperature = 22, date }) => 
         </div>
         
         <div className="flex items-center space-x-2 text-gray-600">
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-            />
-          </svg>
-          <span className="text-lg">{temperature}°C</span>
+          {isLoading ? (
+            <span>Loading weather...</span>
+          ) : error ? (
+            <span title={error}>Weather unavailable</span>
+          ) : (
+            <>
+              {getWeatherIcon(weatherCondition)}
+              <span className="text-lg">{currentTemperature}°C</span>
+            </>
+          )}
         </div>
       </div>
     </div>
