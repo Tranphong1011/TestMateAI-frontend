@@ -83,7 +83,7 @@ export default function DashboardLayout({
           </button>
           {/* User Profile */}
           <button className="flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0A2533] focus:ring-white">
-            B {/* Replace with user initial or avatar */}
+            R {/* Replace with user initial or avatar */}
           </button>
            {/* Dropdown arrow (optional) */}
            <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>

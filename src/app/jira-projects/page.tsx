@@ -148,7 +148,7 @@ export default function JiraProjectsPage() {
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
                     <div className="w-5 h-5 bg-blue-500 rounded flex items-center justify-center text-white text-xs">
-                      {project.status}
+                      {project?.name[0]}
                     </div>
                     <h3 className="font-medium text-sm">{project.name}</h3>
                   </div>

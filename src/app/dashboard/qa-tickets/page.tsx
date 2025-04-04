@@ -15,6 +15,7 @@ interface JiraIssue {
 
 interface Ticket {
   id: string;
+  key: string;
   title: string;
   description: string;
   date: string;
@@ -71,10 +72,14 @@ export default function QATickets() {
   }, []);
 
   const handleCreateTestcases = () => {
+
+    console.log("selectedTicket",selectedTicket);
     if (selectedTicket) {
       const params = new URLSearchParams({
         title: selectedTicket.title,
-        description: selectedTicket.description
+        description: selectedTicket.description,
+        id:selectedTicket.id,
+        key:selectedTicket.key
       });
       router.push(`/dashboard/testcase?${params.toString()}`);
     }
@@ -113,6 +118,7 @@ export default function QATickets() {
                 className="bg-white rounded-lg shadow-sm p-4 cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => setSelectedTicket({
                   id: issue.id,
+                  key: issue.key,
                   title: issue.summary,
                   description: `Project: ${issue.project_id}\nStatus: ${issue.status}`,
                   date: new Date().toLocaleDateString(),
