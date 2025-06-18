@@ -49,7 +49,7 @@ export default function MyProjects() {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch('https://127.0.0.1:7000/api/v1/jira/authorized-projects/jira');
+        const response = await fetch('https://127.0.0.1:9000/api/v1/jira/authorized-projects/jira?user_id='+user?.user_id);
         if (!response.ok) {
           throw new Error('Failed to fetch projects');
         }
@@ -81,7 +81,7 @@ export default function MyProjects() {
       dispatch(setSelectedProject({ ...project, type: 'jira' }));
 
       // You might want to make an API call here to update the backend
-      const response = await fetch(`https://127.0.0.1:7000/api/v1/projects/join`, {
+      const response = await fetch(`https://127.0.0.1:9000/api/v1/projects/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

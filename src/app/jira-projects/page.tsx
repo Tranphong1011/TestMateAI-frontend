@@ -31,6 +31,8 @@ export default function JiraProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('recent');
+  const { user } = useSelector((state: RootState) => state.auth);
+
 
   // Get current date and day
   const today = new Date();
@@ -44,7 +46,7 @@ export default function JiraProjectsPage() {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch('https://127.0.0.1:7000/api/v1/jira/authorized-projects/jira');
+        const response = await fetch('https://127.0.0.1:9000/api/v1/jira/authorized-projects/jira?user_id='+user?.user_id);
         if (!response.ok) {
           throw new Error('Failed to fetch projects');
         }
@@ -63,7 +65,11 @@ export default function JiraProjectsPage() {
   const handleProjectSelect = async (project: Project) => {
     try {
       // await dispatch(selectJiraProject(project)).unwrap();
-      const userId = '90eea180-e5a5-4b82-b31a-e47e30b4579f'; // This should come from your auth state
+      console.log("========= user",user)
+      let userId = ''; // This should come from your auth state
+      if(user){
+        userId = user.user_id
+      }
       await dispatch(selectProject({ project: project.name, userId })).unwrap();
       router.push('/dashboard');
     } catch (err) {

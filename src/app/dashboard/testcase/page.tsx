@@ -44,7 +44,7 @@ export default function TestcasePage() {
       setShowTable(false);
 
       try {
-        const response = await fetch('https://127.0.0.1:7000/api/v1/test_cases/generate', {
+        const response = await fetch('https://127.0.0.1:9000/api/v1/test_cases/generate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -320,8 +320,8 @@ export default function TestcasePage() {
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <span className="text-yellow-600 font-semibold">{stats.verifiedTestCases}</span>
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <span className="text-green-600 font-semibold">{stats.verifiedTestCases}</span>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Verified Test Cases</p>
@@ -331,8 +331,8 @@ export default function TestcasePage() {
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-green-600 font-semibold">{stats.pendingTestCases}</span>
+              <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <span className="text-yellow-600 font-semibold">{stats.pendingTestCases}</span>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Pending Test Cases</p>

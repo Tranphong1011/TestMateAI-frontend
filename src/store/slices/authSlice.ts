@@ -23,7 +23,7 @@ const initialState: AuthState = {
 export const login = createAsyncThunk(
   'auth/login',
   async (credentials: { email: string; password: string }) => {
-    const response = await fetch('https://localhost:7000/api/v1/auth/login', {
+    const response = await fetch('https://localhost:9000/api/v1/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -52,6 +52,9 @@ const authSlice = createSlice({
     setToken: (state, action) => {
       state.token = action.payload; // Set the token from the action payload
     },
+    setUser: (state, action) => {
+      state.user = action.payload; // Set the token from the action payload
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -71,5 +74,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout,setToken } = authSlice.actions;
+export const { logout,setToken,setUser } = authSlice.actions;
 export default authSlice.reducer; 

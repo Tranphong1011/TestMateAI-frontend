@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import TicketDetailsModal from '@/components/TicketDetailsModal';
 import { useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/store';
 
 interface JiraIssue {
   id: string;
@@ -45,11 +47,14 @@ export default function QATickets() {
   const [issues, setIssues] = useState<JiraIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useSelector((state: RootState) => state.auth);
+
 
   useEffect(() => {
     const fetchIssues = async () => {
       try {
-        const response = await fetch('https://localhost:7000/api/v1/jira/issues?user_id=90eea180-e5a5-4b82-b31a-e47e30b4579f', {
+        let user_id = user?.user_id
+        const response = await fetch(`https://localhost:9000/api/v1/jira/issues?user_id=${user_id}`, {
           headers: {
             'Accept': 'application/json',
           },

@@ -7,7 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
-import { login, setToken } from '@/store/slices/authSlice';
+import { login, setToken, setUser } from '@/store/slices/authSlice';
 import { setConnectionStatus } from '@/store/slices/jiraSlice';
 import { AppDispatch, RootState } from '@/store/store';
 
@@ -24,6 +24,8 @@ export default function LoginPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { loading, error } = useSelector((state: RootState) => state.auth);
   const { isConnected } = useSelector((state: RootState) => state.jira);
+  const { user } = useSelector((state: RootState) => state.auth);
+
 
   useEffect(() => {
     // Listen for messages from the Jira OAuth popup
@@ -32,8 +34,14 @@ export default function LoginPage() {
       if (event.data.status === 'oauth_success') {
         console.log("event.data", event.data);
         const token = event.data.token;
+        const user_id = event.data.user_id;
         if (token) {
           dispatch(setToken(token)); // Dispatch the action to set the token in the auth slice
+        }
+        if(user_id){
+          dispatch(setUser({
+            user_id:user_id
+          }))
         }
         dispatch(setConnectionStatus(true));
         // Fetch available integrations after successful OAuth
@@ -48,7 +56,7 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      return;
+      // return;
       await dispatch(login({ email: data.email, password: data.password })).unwrap();
       router.push('/dashboard');
     } catch (err) {
@@ -58,9 +66,14 @@ export default function LoginPage() {
 
   const handleJiraConnect = async () => {
     try {
-      const userId = '90eea180-e5a5-4b82-b31a-e47e30b4579f'; // This should come from your auth state
-      const response = await fetch(`https://127.0.0.1:7000/api/v1/jira/connect?user_id=${userId}`);
+      let userId = ''; // This should come from your auth state
+      if(user){
+        userId = user.user_id
+      }
+      const response = await fetch(`https://127.0.0.1:9000/api/v1/jira/connect?user_id=${userId}`);
       const data = await response.json();
+
+      console.log("======= data",data)
 
       // Check if user is already connected
       if (response.status === 409 && data.status === "connected") {
@@ -82,6 +95,8 @@ export default function LoginPage() {
       }
 
       const oauthUrl = data.oauth_url;
+
+      console.log("====== oauthUrl ",oauthUrl)
       
       // Open Jira OAuth popup
       const width = 600;
