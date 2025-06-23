@@ -7,6 +7,7 @@ import { selectProject } from '@/store/slices/jiraSlice';
 import { AppDispatch, RootState } from '@/store/store';
 import Image from 'next/image';
 import { CalendarIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import { API_URL } from '@/utils/config';
 
 interface Project {
   id: string;
@@ -46,7 +47,7 @@ export default function JiraProjectsPage() {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch('https://127.0.0.1:9000/api/v1/jira/authorized-projects/jira?user_id='+user?.user_id);
+        const response = await fetch(API_URL+'/jira/authorized-projects/jira?user_id='+user?.user_id);
         if (!response.ok) {
           throw new Error('Failed to fetch projects');
         }
