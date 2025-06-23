@@ -5,6 +5,7 @@ import TicketDetailsModal from '@/components/TicketDetailsModal';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
+import { API_URL } from '@/utils/config';
 
 interface JiraIssue {
   id: string;
@@ -54,7 +55,7 @@ export default function QATickets() {
     const fetchIssues = async () => {
       try {
         let user_id = user?.user_id
-        const response = await fetch(`https://localhost:9000/api/v1/jira/issues?user_id=${user_id}`, {
+        const response = await fetch(`${API_URL}/jira/issues?user_id=${user_id}`, {
           headers: {
             'Accept': 'application/json',
           },

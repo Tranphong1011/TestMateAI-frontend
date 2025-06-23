@@ -10,6 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { login, setToken, setUser } from '@/store/slices/authSlice';
 import { setConnectionStatus } from '@/store/slices/jiraSlice';
 import { AppDispatch, RootState } from '@/store/store';
+import { API_URL } from '@/utils/config';
 
 type LoginFormData = {
   email: string;
@@ -70,7 +71,7 @@ export default function LoginPage() {
       if(user){
         userId = user.user_id
       }
-      const response = await fetch(`https://127.0.0.1:9000/api/v1/jira/connect?user_id=${userId}`);
+      const response = await fetch(`${API_URL}/jira/connect?user_id=${userId}`);
       const data = await response.json();
 
       console.log("======= data",data)

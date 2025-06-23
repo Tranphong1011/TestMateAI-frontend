@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowDownTrayIcon, ShareIcon } from '@heroicons/react/24/outline';
 import TestCaseDetailsModal from '@/components/TestCaseDetailsModal';
 import { useSearchParams } from 'next/navigation';
+import { API_URL } from '@/utils/config';
 
 interface TestCase {
   id: string;
@@ -44,7 +45,7 @@ export default function TestcasePage() {
       setShowTable(false);
 
       try {
-        const response = await fetch('https://127.0.0.1:9000/api/v1/test_cases/generate', {
+        const response = await fetch(API_URL+'/test_cases/generate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

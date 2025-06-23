@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { setActiveProject } from './projectSlice';
+import { API_URL } from '@/utils/config';
 
 interface JiraState {
   projects: string[];
@@ -20,7 +21,7 @@ const initialState: JiraState = {
 export const getJiraProjects = createAsyncThunk(
   'jira/getProjects',
   async (userId: string) => {
-    const response = await fetch(`https://127.0.0.1:9000/api/v1/jira/projects?user_id=${userId}`);
+    const response = await fetch(`${API_URL}/jira/projects?user_id=${userId}`);
     if (!response.ok) {
       throw new Error('Failed to fetch Jira projects');
     }
@@ -33,7 +34,7 @@ export const selectProject = createAsyncThunk(
   'jira/selectProject',
   async ({ project, userId }: { project: string; userId: string }, { rejectWithValue, dispatch }) => {
     try {
-      const response = await fetch(`https://127.0.0.1:9000/api/v1/jira/select-project?user_id=${userId}`, {
+      const response = await fetch(`${API_URL}/jira/select-project?user_id=${userId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
