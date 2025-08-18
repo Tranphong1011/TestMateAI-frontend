@@ -90,6 +90,13 @@ export default function TestcasePage() {
                   if (mounted) {
 
                     console.log("testCase", testCase);
+                    if(testCase?.error=="Invalid JSON received"){
+                      console.log("Getting error testcase and skipping it.");
+                      
+                      setShowTable(false);
+                      setLoading(false);
+                      continue;
+                    }
                     addTestCase(testCase);
                     setShowTable(true);
                     setLoading(false);
