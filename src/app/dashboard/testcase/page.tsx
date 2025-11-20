@@ -5,6 +5,8 @@ import { ArrowDownTrayIcon, ShareIcon } from '@heroicons/react/24/outline';
 import TestCaseDetailsModal from '@/components/TestCaseDetailsModal';
 import { useSearchParams } from 'next/navigation';
 import { API_URL } from '@/utils/config';
+import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 interface TestCase {
   id: string;
@@ -23,6 +25,10 @@ export default function TestcasePage() {
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [loading, setLoading] = useState(false);
   const [showTable, setShowTable] = useState(false);
+  
+  // 1. DEDICATED STATE for download button readiness
+  const [canDownload, setCanDownload] = useState(false); 
+
   const [stats, setStats] = useState({
     totalTestCases: 0,
     verifiedTestCases: 0,
@@ -43,6 +49,7 @@ export default function TestcasePage() {
       setLoading(true);
       setTestCases([]);
       setShowTable(false);
+      setCanDownload(false); // Reset download state at start
 
       try {
         const response = await fetch(API_URL+'/test_cases/generate', {
@@ -89,17 +96,18 @@ export default function TestcasePage() {
                   const testCase = JSON.parse(jsonStr);
                   if (mounted) {
 
-                    console.log("testCase", testCase);
                     if(testCase?.error=="Invalid JSON received"){
                       console.log("Getting error testcase and skipping it.");
                       
                       setShowTable(false);
                       setLoading(false);
+                      setCanDownload(false);
                       continue;
                     }
                     addTestCase(testCase);
                     setShowTable(true);
-                    setLoading(false);
+                    // setLoading(false) is called when the first one arrives, but 
+                    // we delay the final download check until the stream finishes.
                   }
                 } catch (e) {
                   console.error('Error parsing test case:', e);
@@ -110,11 +118,16 @@ export default function TestcasePage() {
           }
         } finally {
           reader.releaseLock();
+          // Set loading to false only after the stream is fully done
+          if (mounted) {
+            setLoading(false);
+          }
         }
       } catch (error) {
         if (mounted) {
           console.error('Error generating test cases:', error);
           setLoading(false);
+          setCanDownload(false); // Disable download on total fetch error
         }
       }
     };
@@ -124,7 +137,22 @@ export default function TestcasePage() {
     return () => {
       mounted = false;
     };
-  }, [ticketTitle]);
+  }, [ticketTitle, searchParams]);
+
+  // 2. DEDICATED useEffect to determine final download readiness
+  useEffect(() => {
+      // The button is ready to download if:
+      // 1. We are NOT currently loading (streaming is finished)
+      // 2. AND we have at least one test case in the list.
+      if (!loading && testCases.length > 0) {
+          setCanDownload(true);
+      } 
+      // Ensure it is disabled if loading stops and no data was received
+      else if (!loading && testCases.length === 0) {
+          setCanDownload(false);
+      }
+  }, [loading, testCases.length]);
+
 
   const getCategoryColor = (category: string | undefined | null) => {
     const defaultCategory = 'functional';
@@ -141,8 +169,6 @@ export default function TestcasePage() {
   };
 
   const handleRowClick = (testCase: TestCase) => {
-
-    // console.log("details testCase", testCase);
     setSelectedTestCase(testCase);
   };
 
@@ -182,6 +208,136 @@ export default function TestcasePage() {
     });
   };
 
+  /**
+   * Helper function to escape strings for CSV format.
+   * Ensures commas and quotes within data cells are handled correctly.
+   */
+  const escapeCsv = (data: string | number | undefined | string[] | null): string => {
+    if (data === null || data === undefined) return '';
+
+    // Handle array (steps) by joining with a semicolon and escaping the result
+    let strData: string;
+    if (Array.isArray(data)) {
+      strData = data.join('; ');
+    } else {
+      strData = String(data);
+    }
+
+    // Escape double quotes within the string by doubling them, then wrap the whole string in double quotes
+    if (strData.includes(',') || strData.includes('"') || strData.includes('\n')) {
+      return `"${strData.replace(/"/g, '""')}"`;
+    }
+    return strData;
+  };
+
+  /**
+   * Function to download the test cases as a proper XLSX file using the ExcelJS library.
+   * This ensures styles (colors, bold) are applied correctly.
+   */
+  const handleDownloadExceljsReport = async () => {
+    if (testCases.length === 0) {
+        alert('No test cases to download.');
+        return;
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Test Report Generator';
+    workbook.lastModifiedBy = 'System';
+    workbook.created = new Date();
+    workbook.modified = new Date();
+
+    const worksheet = workbook.addWorksheet('Test Cases');
+
+    // --- 1. Define Column Headers and Widths ---
+    worksheet.columns = [
+        { header: 'ID', key: 'id', width: 10 },
+        { header: 'Category', key: 'category', width: 15 },
+        { header: 'Test Case Title', key: 'testcase', width: 35 },
+        { header: 'Description', key: 'description', width: 50 },
+        { header: 'Steps', key: 'steps', width: 60 },
+        { header: 'Expected Result', key: 'expected_result', width: 50 },
+        { header: 'Status', key: 'status', width: 12 },
+    ];
+
+    // --- 2. Map Data and Add Rows (Setting Default Cell Style) ---
+    testCases.forEach(tc => {
+        const stepsText = tc.steps ? tc.steps.join('\n') : '';
+
+        const row = worksheet.addRow({
+            id: tc.id,
+            category: tc.category,
+            testcase: tc.testcase,
+            description: tc.description,
+            steps: stepsText,
+            expected_result: tc.expected_result,
+            status: tc.status,
+        });
+
+        // Apply General Cell Style (Borders and Wrap Text) to all data cells
+        row.eachCell({ includeEmpty: false }, (cell) => {
+            cell.alignment = { wrapText: true, vertical: 'top', horizontal: 'left' };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' },
+            };
+        });
+    });
+
+    // --- 3. Apply Header Style (Sky Blue Background & Bold) ---
+    const headerRow = worksheet.getRow(1);
+    const skyBlue = 'ADD8E6'; // Light Blue
+    
+    headerRow.eachCell((cell) => {
+        cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: skyBlue },
+        };
+        cell.font = {
+            bold: true,
+            color: { argb: '000000' } // Black text
+        };
+        cell.alignment = {
+            wrapText: true,
+            vertical: 'middle',
+            horizontal: 'center',
+        };
+        // Add borders to the header
+        cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' },
+        };
+    });
+    
+    headerRow.height = 20;
+
+    // --- 4. Write to Buffer and Trigger Download ---
+    try {
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        
+        const fileName = `Test_Report_${ticketTitle.replace(/\s/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+        // Trigger download
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+    } catch (e) {
+        console.error('ExcelJS Download failed:', e);
+        alert('Error generating XLSX file with ExcelJS.');
+    }
+  };
+
   const TableSection = ({ 
     id, 
     title, 
@@ -216,19 +372,20 @@ export default function TestcasePage() {
       {isExpanded && (
         <>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            {/* Table no longer needs a ref */}
+            <table className="w-full"> 
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Case</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Steps</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Steps Count</th> 
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected Result</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {testCases.map((testCase, index) => (
+                {testCases.map((testCase) => (
                   <tr 
                     key={testCase.id}
                     onClick={() => handleRowClick(testCase)}
@@ -277,21 +434,6 @@ export default function TestcasePage() {
               </tbody>
             </table>
           </div>
-          {/* <div className="px-4 py-3 border-t">
-            <div className="flex items-center justify-between">
-              <button className="text-gray-600 hover:text-gray-900">← Previous</button>
-              <div className="flex items-center space-x-2">
-                <button className="px-3 py-1 bg-blue-50 text-blue-600 rounded">1</button>
-                <button className="px-3 py-1 text-gray-600 hover:bg-gray-50 rounded">2</button>
-                <button className="px-3 py-1 text-gray-600 hover:bg-gray-50 rounded">3</button>
-                <span>...</span>
-                <button className="px-3 py-1 text-gray-600 hover:bg-gray-50 rounded">8</button>
-                <button className="px-3 py-1 text-gray-600 hover:bg-gray-50 rounded">9</button>
-                <button className="px-3 py-1 text-gray-600 hover:bg-gray-50 rounded">10</button>
-              </div>
-              <button className="text-gray-600 hover:text-gray-900">Next →</button>
-            </div>
-          </div> */}
         </>
       )}
     </div>
@@ -303,13 +445,21 @@ export default function TestcasePage() {
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-semibold">Test Cases for: {ticketTitle}</h1>
           <div className="flex items-center space-x-4">
-            <button className="flex items-center space-x-2 text-blue-600">
+           {/* BUTTON LOGIC: Uses !canDownload */}
+            <button 
+              className={`
+                flex items-center space-x-2 px-4 py-2 rounded-lg 
+                font-semibold transition-colors duration-200 ease-in-out
+                ${!canDownload
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
+                }
+              `}
+              onClick={handleDownloadExceljsReport}
+              disabled={!canDownload}
+            >
               <ArrowDownTrayIcon className="w-5 h-5" />
-              <span>Download Report</span>
-            </button>
-            <button className="flex items-center space-x-2 text-blue-600">
-              <ShareIcon className="w-5 h-5" />
-              <span>Share Report</span>
+              <span>Download</span>
             </button>
           </div>
         </div>
@@ -393,4 +543,4 @@ export default function TestcasePage() {
       )}
     </div>
   );
-} 
+}
