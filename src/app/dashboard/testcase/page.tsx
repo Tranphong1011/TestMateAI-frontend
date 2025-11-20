@@ -6,7 +6,7 @@ import TestCaseDetailsModal from '@/components/TestCaseDetailsModal';
 import { useSearchParams } from 'next/navigation';
 import { API_URL } from '@/utils/config';
 import * as XLSX from 'xlsx';
-import ExcelJS from 'exceljs'; // You need to update your import
+import ExcelJS from 'exceljs';
 
 interface TestCase {
   id: string;
@@ -25,14 +25,16 @@ export default function TestcasePage() {
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [loading, setLoading] = useState(false);
   const [showTable, setShowTable] = useState(false);
+  
+  // 1. DEDICATED STATE for download button readiness
+  const [canDownload, setCanDownload] = useState(false); 
+
   const [stats, setStats] = useState({
     totalTestCases: 0,
     verifiedTestCases: 0,
     pendingTestCases: 0,
     rejectedTestCases: 0
   });
-
-  // Removed tableRef since we are using the testCases state array
 
   // Get ticket data from URL params with null checks
   const ticketTitle = searchParams?.get('title') ?? '';
@@ -47,6 +49,7 @@ export default function TestcasePage() {
       setLoading(true);
       setTestCases([]);
       setShowTable(false);
+      setCanDownload(false); // Reset download state at start
 
       try {
         const response = await fetch(API_URL+'/test_cases/generate', {
@@ -93,17 +96,18 @@ export default function TestcasePage() {
                   const testCase = JSON.parse(jsonStr);
                   if (mounted) {
 
-                    // console.log("testCase", testCase);
                     if(testCase?.error=="Invalid JSON received"){
                       console.log("Getting error testcase and skipping it.");
                       
                       setShowTable(false);
                       setLoading(false);
+                      setCanDownload(false);
                       continue;
                     }
                     addTestCase(testCase);
                     setShowTable(true);
-                    setLoading(false);
+                    // setLoading(false) is called when the first one arrives, but 
+                    // we delay the final download check until the stream finishes.
                   }
                 } catch (e) {
                   console.error('Error parsing test case:', e);
@@ -114,11 +118,16 @@ export default function TestcasePage() {
           }
         } finally {
           reader.releaseLock();
+          // Set loading to false only after the stream is fully done
+          if (mounted) {
+            setLoading(false);
+          }
         }
       } catch (error) {
         if (mounted) {
           console.error('Error generating test cases:', error);
           setLoading(false);
+          setCanDownload(false); // Disable download on total fetch error
         }
       }
     };
@@ -129,6 +138,21 @@ export default function TestcasePage() {
       mounted = false;
     };
   }, [ticketTitle, searchParams]);
+
+  // 2. DEDICATED useEffect to determine final download readiness
+  useEffect(() => {
+      // The button is ready to download if:
+      // 1. We are NOT currently loading (streaming is finished)
+      // 2. AND we have at least one test case in the list.
+      if (!loading && testCases.length > 0) {
+          setCanDownload(true);
+      } 
+      // Ensure it is disabled if loading stops and no data was received
+      else if (!loading && testCases.length === 0) {
+          setCanDownload(false);
+      }
+  }, [loading, testCases.length]);
+
 
   const getCategoryColor = (category: string | undefined | null) => {
     const defaultCategory = 'functional';
@@ -206,15 +230,9 @@ export default function TestcasePage() {
     return strData;
   };
 
-
   /**
-   * Function to download the test cases as a CSV file (which opens well in Excel).
-   * It uses the `testCases` state array directly.
-   */
-
-  /**
-   * Function to download the test cases as a proper XLSX file using the SheetJS library.
-   * Includes custom formatting for headers (Sky Blue & Bold), borders, and column widths.
+   * Function to download the test cases as a proper XLSX file using the ExcelJS library.
+   * This ensures styles (colors, bold) are applied correctly.
    */
   const handleDownloadExceljsReport = async () => {
     if (testCases.length === 0) {
@@ -231,7 +249,6 @@ export default function TestcasePage() {
     const worksheet = workbook.addWorksheet('Test Cases');
 
     // --- 1. Define Column Headers and Widths ---
-    // ExcelJS uses a 'header' property for headers and 'width' for column definitions.
     worksheet.columns = [
         { header: 'ID', key: 'id', width: 10 },
         { header: 'Category', key: 'category', width: 15 },
@@ -243,11 +260,9 @@ export default function TestcasePage() {
     ];
 
     // --- 2. Map Data and Add Rows (Setting Default Cell Style) ---
-    const dataRows = testCases.map(tc => {
-        // Prepare steps data for the cell
+    testCases.forEach(tc => {
         const stepsText = tc.steps ? tc.steps.join('\n') : '';
 
-        // Add the row data
         const row = worksheet.addRow({
             id: tc.id,
             category: tc.category,
@@ -268,7 +283,6 @@ export default function TestcasePage() {
                 right: { style: 'thin' },
             };
         });
-        return row;
     });
 
     // --- 3. Apply Header Style (Sky Blue Background & Bold) ---
@@ -299,7 +313,6 @@ export default function TestcasePage() {
         };
     });
     
-    // Set header row height for multi-line headers if needed
     headerRow.height = 20;
 
     // --- 4. Write to Buffer and Trigger Download ---
@@ -323,7 +336,7 @@ export default function TestcasePage() {
         console.error('ExcelJS Download failed:', e);
         alert('Error generating XLSX file with ExcelJS.');
     }
-};
+  };
 
   const TableSection = ({ 
     id, 
@@ -432,17 +445,21 @@ export default function TestcasePage() {
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-semibold">Test Cases for: {ticketTitle}</h1>
           <div className="flex items-center space-x-4">
+           {/* BUTTON LOGIC: Uses !canDownload */}
             <button 
-              className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition-colors"
+              className={`
+                flex items-center space-x-2 px-4 py-2 rounded-lg 
+                font-semibold transition-colors duration-200 ease-in-out
+                ${!canDownload
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
+                }
+              `}
               onClick={handleDownloadExceljsReport}
-              disabled={loading || testCases.length === 0}
+              disabled={!canDownload}
             >
               <ArrowDownTrayIcon className="w-5 h-5" />
-              <span>Download Report</span>
-            </button>
-            <button className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition-colors">
-              <ShareIcon className="w-5 h-5" />
-              <span>Share Report</span>
+              <span>Download</span>
             </button>
           </div>
         </div>
