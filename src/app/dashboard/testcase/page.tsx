@@ -5,6 +5,8 @@ import { ArrowDownTrayIcon, ShareIcon } from '@heroicons/react/24/outline';
 import TestCaseDetailsModal from '@/components/TestCaseDetailsModal';
 import { useSearchParams } from 'next/navigation';
 import { API_URL } from '@/utils/config';
+import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs'; // You need to update your import
 
 interface TestCase {
   id: string;
@@ -29,6 +31,8 @@ export default function TestcasePage() {
     pendingTestCases: 0,
     rejectedTestCases: 0
   });
+
+  // Removed tableRef since we are using the testCases state array
 
   // Get ticket data from URL params with null checks
   const ticketTitle = searchParams?.get('title') ?? '';
@@ -89,7 +93,7 @@ export default function TestcasePage() {
                   const testCase = JSON.parse(jsonStr);
                   if (mounted) {
 
-                    console.log("testCase", testCase);
+                    // console.log("testCase", testCase);
                     if(testCase?.error=="Invalid JSON received"){
                       console.log("Getting error testcase and skipping it.");
                       
@@ -124,7 +128,7 @@ export default function TestcasePage() {
     return () => {
       mounted = false;
     };
-  }, [ticketTitle]);
+  }, [ticketTitle, searchParams]);
 
   const getCategoryColor = (category: string | undefined | null) => {
     const defaultCategory = 'functional';
@@ -141,8 +145,6 @@ export default function TestcasePage() {
   };
 
   const handleRowClick = (testCase: TestCase) => {
-
-    // console.log("details testCase", testCase);
     setSelectedTestCase(testCase);
   };
 
@@ -182,6 +184,147 @@ export default function TestcasePage() {
     });
   };
 
+  /**
+   * Helper function to escape strings for CSV format.
+   * Ensures commas and quotes within data cells are handled correctly.
+   */
+  const escapeCsv = (data: string | number | undefined | string[] | null): string => {
+    if (data === null || data === undefined) return '';
+
+    // Handle array (steps) by joining with a semicolon and escaping the result
+    let strData: string;
+    if (Array.isArray(data)) {
+      strData = data.join('; ');
+    } else {
+      strData = String(data);
+    }
+
+    // Escape double quotes within the string by doubling them, then wrap the whole string in double quotes
+    if (strData.includes(',') || strData.includes('"') || strData.includes('\n')) {
+      return `"${strData.replace(/"/g, '""')}"`;
+    }
+    return strData;
+  };
+
+
+  /**
+   * Function to download the test cases as a CSV file (which opens well in Excel).
+   * It uses the `testCases` state array directly.
+   */
+
+  /**
+   * Function to download the test cases as a proper XLSX file using the SheetJS library.
+   * Includes custom formatting for headers (Sky Blue & Bold), borders, and column widths.
+   */
+  const handleDownloadExceljsReport = async () => {
+    if (testCases.length === 0) {
+        alert('No test cases to download.');
+        return;
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Test Report Generator';
+    workbook.lastModifiedBy = 'System';
+    workbook.created = new Date();
+    workbook.modified = new Date();
+
+    const worksheet = workbook.addWorksheet('Test Cases');
+
+    // --- 1. Define Column Headers and Widths ---
+    // ExcelJS uses a 'header' property for headers and 'width' for column definitions.
+    worksheet.columns = [
+        { header: 'ID', key: 'id', width: 10 },
+        { header: 'Category', key: 'category', width: 15 },
+        { header: 'Test Case Title', key: 'testcase', width: 35 },
+        { header: 'Description', key: 'description', width: 50 },
+        { header: 'Steps', key: 'steps', width: 60 },
+        { header: 'Expected Result', key: 'expected_result', width: 50 },
+        { header: 'Status', key: 'status', width: 12 },
+    ];
+
+    // --- 2. Map Data and Add Rows (Setting Default Cell Style) ---
+    const dataRows = testCases.map(tc => {
+        // Prepare steps data for the cell
+        const stepsText = tc.steps ? tc.steps.join('\n') : '';
+
+        // Add the row data
+        const row = worksheet.addRow({
+            id: tc.id,
+            category: tc.category,
+            testcase: tc.testcase,
+            description: tc.description,
+            steps: stepsText,
+            expected_result: tc.expected_result,
+            status: tc.status,
+        });
+
+        // Apply General Cell Style (Borders and Wrap Text) to all data cells
+        row.eachCell({ includeEmpty: false }, (cell) => {
+            cell.alignment = { wrapText: true, vertical: 'top', horizontal: 'left' };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' },
+            };
+        });
+        return row;
+    });
+
+    // --- 3. Apply Header Style (Sky Blue Background & Bold) ---
+    const headerRow = worksheet.getRow(1);
+    const skyBlue = 'ADD8E6'; // Light Blue
+    
+    headerRow.eachCell((cell) => {
+        cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: skyBlue },
+        };
+        cell.font = {
+            bold: true,
+            color: { argb: '000000' } // Black text
+        };
+        cell.alignment = {
+            wrapText: true,
+            vertical: 'middle',
+            horizontal: 'center',
+        };
+        // Add borders to the header
+        cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' },
+        };
+    });
+    
+    // Set header row height for multi-line headers if needed
+    headerRow.height = 20;
+
+    // --- 4. Write to Buffer and Trigger Download ---
+    try {
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        
+        const fileName = `Test_Report_${ticketTitle.replace(/\s/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+        // Trigger download
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+    } catch (e) {
+        console.error('ExcelJS Download failed:', e);
+        alert('Error generating XLSX file with ExcelJS.');
+    }
+};
+
   const TableSection = ({ 
     id, 
     title, 
@@ -216,19 +359,20 @@ export default function TestcasePage() {
       {isExpanded && (
         <>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            {/* Table no longer needs a ref */}
+            <table className="w-full"> 
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Case</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Steps</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Steps Count</th> 
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected Result</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {testCases.map((testCase, index) => (
+                {testCases.map((testCase) => (
                   <tr 
                     key={testCase.id}
                     onClick={() => handleRowClick(testCase)}
@@ -277,21 +421,6 @@ export default function TestcasePage() {
               </tbody>
             </table>
           </div>
-          {/* <div className="px-4 py-3 border-t">
-            <div className="flex items-center justify-between">
-              <button className="text-gray-600 hover:text-gray-900">← Previous</button>
-              <div className="flex items-center space-x-2">
-                <button className="px-3 py-1 bg-blue-50 text-blue-600 rounded">1</button>
-                <button className="px-3 py-1 text-gray-600 hover:bg-gray-50 rounded">2</button>
-                <button className="px-3 py-1 text-gray-600 hover:bg-gray-50 rounded">3</button>
-                <span>...</span>
-                <button className="px-3 py-1 text-gray-600 hover:bg-gray-50 rounded">8</button>
-                <button className="px-3 py-1 text-gray-600 hover:bg-gray-50 rounded">9</button>
-                <button className="px-3 py-1 text-gray-600 hover:bg-gray-50 rounded">10</button>
-              </div>
-              <button className="text-gray-600 hover:text-gray-900">Next →</button>
-            </div>
-          </div> */}
         </>
       )}
     </div>
@@ -303,11 +432,15 @@ export default function TestcasePage() {
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-semibold">Test Cases for: {ticketTitle}</h1>
           <div className="flex items-center space-x-4">
-            <button className="flex items-center space-x-2 text-blue-600">
+            <button 
+              className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition-colors"
+              onClick={handleDownloadExceljsReport}
+              disabled={loading || testCases.length === 0}
+            >
               <ArrowDownTrayIcon className="w-5 h-5" />
               <span>Download Report</span>
             </button>
-            <button className="flex items-center space-x-2 text-blue-600">
+            <button className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition-colors">
               <ShareIcon className="w-5 h-5" />
               <span>Share Report</span>
             </button>
@@ -393,4 +526,4 @@ export default function TestcasePage() {
       )}
     </div>
   );
-} 
+}
