@@ -32,7 +32,7 @@ export default function MyProjects() {
   const { selectedProject, activeProject } = useSelector((state: RootState) => state.project);
 
   console.log("activeProject",activeProject);
-  const userName = user?.name || 'Rahul Sahni';
+  const userName = user?.name || 'User';
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,10 +42,17 @@ export default function MyProjects() {
   const today = new Date();
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const currentDay = dayNames[today.getDay()];
-  const currentDate = today.toLocaleDateString('en-US', { 
-    day: 'numeric', 
-    month: 'long' 
+  const currentDate = today.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'long'
   });
+
+  const getGreeting = () => {
+    const hour = today.getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -126,7 +133,7 @@ export default function MyProjects() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-semibold">Hi {userName}</h1>
+          <h1 className="text-2xl font-semibold">{getGreeting()}, {userName}</h1>
           <p className="text-gray-500">{currentDay}, {currentDate}</p>
         </div>
         <div className="flex items-center gap-2">

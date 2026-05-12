@@ -1,9 +1,18 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
 import authReducer from './slices/authSlice';
 import projectReducer from './slices/projectSlice';
 import jiraReducer from './slices/jiraSlice';
+
+const createNoopStorage = () => ({
+  getItem(_key: string): Promise<string | null> { return Promise.resolve(null); },
+  setItem(_key: string, _value: string): Promise<void> { return Promise.resolve(); },
+  removeItem(_key: string): Promise<void> { return Promise.resolve(); },
+});
+
+const storage = typeof window !== 'undefined'
+  ? require('redux-persist/lib/storage').default
+  : createNoopStorage();
 
 // Persist configuration
 const persistConfig = {

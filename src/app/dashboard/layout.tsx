@@ -5,7 +5,9 @@ import { useState } from 'react';
 import { HomeIcon, DocumentTextIcon, BookOpenIcon, PlusIcon, MagnifyingGlassIcon, BellIcon } from '@heroicons/react/24/outline';
 import Sidebar from '@/components/Sidebar';
 import { usePathname } from 'next/navigation';
-import Image from 'next/image'; // Keep this import if used elsewhere, otherwise remove
+import Image from 'next/image';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/store';
 
 const navigation = [
   { name: 'My Projects', href: '/dashboard/my-projects', icon: HomeIcon },
@@ -18,8 +20,10 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [projectName] = useState('Project Name'); // You might want to fetch this dynamically
+  const [projectName] = useState('Project Name');
   const pathname = usePathname();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : 'U';
 
   const getBreadcrumbs = () => {
     if (!pathname) return [];
@@ -83,7 +87,7 @@ export default function DashboardLayout({
           </button>
           {/* User Profile */}
           <button className="flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0A2533] focus:ring-white">
-            R {/* Replace with user initial or avatar */}
+            {userInitial}
           </button>
            {/* Dropdown arrow (optional) */}
            <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>

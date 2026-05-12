@@ -67,10 +67,8 @@ export default function LoginPage() {
                 if (finalData.token) {
                     dispatch(setToken(finalData.token));
                 }
-                
-                // 🌟 UPDATE HERE: Set user_id from the finalData response
                 if(finalData.user_id){
-                    dispatch(setUser({ user_id: finalData.user_id }));
+                    dispatch(setUser({ user_id: finalData.user_id, name: finalData.name || '' }));
                 }
 
                 dispatch(setConnectionStatus(true));
@@ -110,7 +108,7 @@ export default function LoginPage() {
                     dispatch(setToken(token));
                 }
                 if(user_id){
-                    dispatch(setUser({ user_id: user_id }));
+                    dispatch(setUser({ user_id: user_id, name: event.data.name || '' }));
                 }
                 dispatch(setConnectionStatus(true));
                 router.push('/jira-projects');
