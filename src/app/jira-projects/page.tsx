@@ -109,7 +109,7 @@ export default function JiraProjectsPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-semibold">Good morning, Rahul sahni</h1>
+          <h1 className="text-2xl font-semibold">Good morning, {user?.name || 'User'}</h1>
           <p className="text-gray-500">{currentDay}, {currentDate}</p>
         </div>
         <div className="flex items-center gap-2">

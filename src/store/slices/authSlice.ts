@@ -1,5 +1,5 @@
-import { API_URL } from '@/utils/config';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { getApiUrl, parseApiResponse } from '@/utils/api';
 
 interface User {
   name: string;
@@ -24,7 +24,7 @@ const initialState: AuthState = {
 export const login = createAsyncThunk(
   'auth/login',
   async (credentials: { email: string; password: string }) => {
-    const response = await fetch(API_URL+'/auth/login', {
+    const response = await fetch(getApiUrl('/auth/login'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -32,14 +32,10 @@ export const login = createAsyncThunk(
       body: JSON.stringify(credentials),
     });
 
-    if (!response.ok) {
-      let err_d = await response.json();
-      console.log("err_d",err_d)
-      // err_d = null
-      throw new Error(`Error: ${err_d?.['message']}`);
-    }
-
-    const data = await response.json();
+    const data = await parseApiResponse<{
+      user: User;
+      token: string;
+    }>(response);
     return data;
   }
 );

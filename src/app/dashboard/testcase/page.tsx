@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowDownTrayIcon, ShareIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, PlayIcon } from '@heroicons/react/24/outline';
 import TestCaseDetailsModal from '@/components/TestCaseDetailsModal';
+import TestExecutionModal from '@/components/TestExecutionModal';
 import { useSearchParams } from 'next/navigation';
 import { API_URL } from '@/utils/config';
-import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
 
 interface TestCase {
@@ -25,9 +25,11 @@ export default function TestcasePage() {
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [loading, setLoading] = useState(false);
   const [showTable, setShowTable] = useState(false);
-  
+  const [runningTestCase, setRunningTestCase] = useState<TestCase | null>(null);
+  const [targetUrl, setTargetUrl] = useState('');
+
   // 1. DEDICATED STATE for download button readiness
-  const [canDownload, setCanDownload] = useState(false); 
+  const [canDownload, setCanDownload] = useState(false);
 
   const [stats, setStats] = useState({
     totalTestCases: 0,
@@ -380,8 +382,9 @@ export default function TestcasePage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Case</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Steps Count</th> 
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Steps Count</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected Result</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Run</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -429,6 +432,15 @@ export default function TestcasePage() {
                     <td className="px-6 py-4 text-sm text-gray-500">
                       <div className="max-w-md line-clamp-2">{testCase.expected_result}</div>
                     </td>
+                    <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => setRunningTestCase(testCase)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <PlayIcon className="w-3.5 h-3.5" />
+                        Run
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -444,17 +456,25 @@ export default function TestcasePage() {
       <div className="max-w-8xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-semibold">Test Cases for: {ticketTitle}</h1>
-          <div className="flex items-center space-x-4">
-           {/* BUTTON LOGIC: Uses !canDownload */}
-            <button 
-              className={`
-                flex items-center space-x-2 px-4 py-2 rounded-lg 
-                font-semibold transition-colors duration-200 ease-in-out
-                ${!canDownload
+          <div className="flex items-center space-x-3">
+            {/* Target URL input */}
+            {canDownload && (
+              <input
+                type="text"
+                placeholder="Target URL (e.g. https://yourapp.com)"
+                value={targetUrl}
+                onChange={e => setTargetUrl(e.target.value)}
+                className="text-sm border border-gray-300 rounded-lg px-3 py-2 w-72 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            )}
+
+            {/* Download button */}
+            <button
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ease-in-out ${
+                !canDownload
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
-                }
-              `}
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
               onClick={handleDownloadExceljsReport}
               disabled={!canDownload}
             >
@@ -539,6 +559,19 @@ export default function TestcasePage() {
             status: selectedTestCase.status
           }}
           onStatusChange={handleStatusChange}
+        />
+      )}
+
+      {runningTestCase && (
+        <TestExecutionModal
+          isOpen={!!runningTestCase}
+          onClose={() => setRunningTestCase(null)}
+          testCase={{
+            id: runningTestCase.id,
+            title: runningTestCase.testcase,
+            steps: runningTestCase.steps,
+          }}
+          targetUrl={targetUrl}
         />
       )}
     </div>
