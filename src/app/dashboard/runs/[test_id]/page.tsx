@@ -86,7 +86,7 @@ function EventBadge({ event }: { event: string }) {
 
 export default function RunDetailPage() {
   const params = useParams();
-  const testId = params.test_id as string;
+  const testId = (params?.test_id ?? '') as string;
 
   const [run, setRun] = useState<RunDetail | null>(null);
   const [loading, setLoading] = useState(true);
