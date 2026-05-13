@@ -101,7 +101,13 @@ export default function LoginPage() {
             const { status, token, user_id, sites, temp_key } = event.data;
             const popup = event.source as Window;
             
-            if (status === 'oauth_success') {
+            if (status === 'google_oauth_success') {
+                // Google OAuth success
+                if (token) dispatch(setToken(token));
+                if (user_id) dispatch(setUser({ user_id, name: event.data.name || '' }));
+                router.push('/dashboard/my-projects');
+
+            } else if (status === 'oauth_success') {
                 // ✅ CASE 1: Single site found, or selection successfully completed by another process.
                 console.log("Jira OAuth Success:", event.data);
                 if (token) {
@@ -153,6 +159,28 @@ export default function LoginPage() {
             router.push('/dashboard/my-projects');
         } catch (err) {
             console.error('Login failed:', err);
+        }
+    };
+
+    const handleGoogleSignIn = async () => {
+        try {
+            const response = await fetch(`${API_URL}/google/connect`);
+            const data = await response.json();
+
+            if (!response.ok) throw new Error('Failed to get Google connect URL');
+
+            const width = 500;
+            const height = 620;
+            const left = window.screen.width / 2 - width / 2;
+            const top = window.screen.height / 2 - height / 2;
+
+            window.open(
+                data.oauth_url,
+                'Google Sign In',
+                `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+            );
+        } catch (err) {
+            console.error('Failed to initiate Google sign-in:', err);
         }
     };
 
@@ -293,7 +321,7 @@ export default function LoginPage() {
                         <div className="grid grid-cols-2 gap-4">
                             <button
                                 className="flex items-center justify-center px-4 py-2.5 border border-gray-200 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                                onClick={() => console.log('Google Sign In')}
+                                onClick={handleGoogleSignIn}
                                 disabled={!!selectionData} // Disable while selection is active
                             >
                                 <Image

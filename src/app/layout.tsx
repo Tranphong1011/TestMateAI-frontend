@@ -5,6 +5,12 @@ import { Providers } from './providers'
 
 const inter = Inter({ subsets: ['latin'] })
 
+export const metadata: Metadata = {
+  icons: {
+    icon: '/icon.png',
+  },
+}
+
 export default function RootLayout({
   children,
 }: {
