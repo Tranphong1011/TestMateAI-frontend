@@ -75,7 +75,7 @@ export default function LoginPage() {
                 
                 // 3. Clear selection state and redirect
                 setSelectionData(null);
-                router.push('/jira-projects'); 
+                router.push('/dashboard/my-projects');
             } else {
                 console.error('Failed to finalize Jira connection:', finalData.error);
                 alert(`Failed to connect: ${finalData.error}`);
@@ -111,8 +111,8 @@ export default function LoginPage() {
                     dispatch(setUser({ user_id: user_id, name: event.data.name || '' }));
                 }
                 dispatch(setConnectionStatus(true));
-                router.push('/jira-projects');
-                
+                router.push('/dashboard/my-projects');
+
             } else if (status === 'oauth_site_selection') {
                 // 🟡 CASE 2: Multiple sites found, user needs to select one.
                 console.log("Jira Site Selection Required:", event.data);
@@ -150,7 +150,7 @@ export default function LoginPage() {
     const onSubmit = async (data: LoginFormData) => {
         try {
             await dispatch(login({ email: data.email, password: data.password })).unwrap();
-            router.push('/dashboard');
+            router.push('/dashboard/my-projects');
         } catch (err) {
             console.error('Login failed:', err);
         }
@@ -184,7 +184,7 @@ export default function LoginPage() {
                 }
 
                 dispatch(setConnectionStatus(true));
-                router.push('/dashboard');
+                router.push('/dashboard/my-projects');
                 return;
             }
 
