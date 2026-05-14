@@ -7,7 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
-import { login, setToken, setUser } from '@/store/slices/authSlice';
+import { login, setToken, setUser, clearError } from '@/store/slices/authSlice';
 import { setConnectionStatus } from '@/store/slices/jiraSlice';
 import { AppDispatch, RootState } from '@/store/store';
 import { API_URL } from '@/utils/config';
@@ -42,8 +42,10 @@ export default function LoginPage() {
     const { register, handleSubmit } = useForm<LoginFormData>();
     const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
-    const { loading, error } = useSelector((state: RootState) => state.auth);
-    const { user } = useSelector((state: RootState) => state.auth);
+    const { loading, error, user } = useSelector((state: RootState) => state.auth);
+
+    const emailError = error === 'email_not_found';
+    const passwordError = error === 'invalid_password';
 
     // --- New Function: Finalize the integration after selection ---
     const finalizeIntegration = useCallback(async (cloudId: string, tempKey: string) => {
@@ -311,11 +313,6 @@ export default function LoginPage() {
                         </p>
                     </div>
 
-                    {error && (
-                        <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg" role="alert">
-                            <span className="block sm:inline">{error}</span>
-                        </div>
-                    )}
 
                     <div className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
@@ -358,21 +355,36 @@ export default function LoginPage() {
                             </div>
                         </div>
 
+                        {error && !emailError && !passwordError && (
+                            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm" role="alert">
+                                Incorrect email or password. Please try again.
+                            </div>
+                        )}
+
                         <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
-                            {/* ... (email/password fields remain the same) ... */}
                             <div className="space-y-5">
                                 <div>
                                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                                        Work Email
+                                        Email address
                                     </label>
                                     <input
-                                        {...register('email')}
+                                        {...register('email', { onChange: () => dispatch(clearError()) })}
                                         id="email"
                                         type="email"
                                         placeholder="john.doe@tempmail.com"
                                         required
-                                        className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                                        className={`block w-full px-3 py-2.5 border rounded-lg shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-shadow ${
+                                            emailError
+                                                ? 'border-red-500 focus:ring-red-500'
+                                                : 'border-gray-300 focus:ring-blue-500'
+                                        }`}
                                     />
+                                    {emailError && (
+                                        <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                                            <span>&#9398;</span>
+                                            The email address you entered isn&apos;t connected to an account.
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div>
@@ -381,12 +393,16 @@ export default function LoginPage() {
                                     </label>
                                     <div className="relative">
                                         <input
-                                            {...register('password')}
+                                            {...register('password', { onChange: () => dispatch(clearError()) })}
                                             id="password"
                                             type={showPassword ? 'text' : 'password'}
                                             placeholder="Password"
                                             required
-                                            className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                                            className={`block w-full px-3 py-2.5 border rounded-lg shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-shadow ${
+                                                passwordError
+                                                    ? 'border-red-500 focus:ring-red-500'
+                                                    : 'border-gray-300 focus:ring-blue-500'
+                                            }`}
                                         />
                                         <button
                                             type="button"
@@ -400,6 +416,12 @@ export default function LoginPage() {
                                             )}
                                         </button>
                                     </div>
+                                    {passwordError && (
+                                        <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                                            <span>&#9398;</span>
+                                            The password you&apos;ve entered is incorrect.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                             {/* ... (checkbox and links remain the same) ... */}
